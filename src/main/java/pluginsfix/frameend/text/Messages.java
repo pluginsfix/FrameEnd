@@ -56,6 +56,9 @@ public final class Messages {
             if (formatted.startsWith("[message] ")) {
                 String text = formatted.substring(10);
                 sender.sendMessage(colorize(text));
+            } else if (formatted.startsWith("[actionbar] ") && sender instanceof Player player) {
+                String text = formatted.substring(12);
+                player.sendActionBar(colorize(text));
             } else if (formatted.startsWith("[sound] ") && sender instanceof Player player) {
                 String soundName = formatted.substring(8).trim();
                 playSound(player, soundName);
@@ -74,6 +77,11 @@ public final class Messages {
             if (formatted.startsWith("[message] ")) {
                 Component comp = colorize(formatted.substring(10));
                 Bukkit.broadcast(comp);
+            } else if (formatted.startsWith("[actionbar] ")) {
+                Component comp = colorize(formatted.substring(12));
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    player.sendActionBar(comp);
+                }
             } else if (formatted.startsWith("[sound] ")) {
                 String soundName = formatted.substring(8).trim();
                 for (Player player : Bukkit.getOnlinePlayers()) {
@@ -99,7 +107,8 @@ public final class Messages {
         matcher.appendTail(sb);
 
         String legacy = sb.toString().replace('&', '§');
-        return LegacyComponentSerializer.legacySection().deserialize(legacy);
+        Component comp = LegacyComponentSerializer.legacySection().deserialize(legacy);
+        return comp.decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
     }
 
     public static String colorizeString(String text) {

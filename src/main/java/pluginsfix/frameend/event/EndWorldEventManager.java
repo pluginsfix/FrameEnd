@@ -23,6 +23,7 @@ public final class EndWorldEventManager {
     private final FrameEndConfig config;
     private final Messages messages;
     private final DragonEggItemFactory eggItemFactory;
+    private final pluginsfix.frameend.hologram.HologramManager hologramManager;
 
     private EventState state = EventState.IDLE;
     private EndAnchorPhase anchorPhase;
@@ -34,17 +35,19 @@ public final class EndWorldEventManager {
     private int closingRemainingSeconds;
     private final Set<Long> broadcastedIntervals = new HashSet<>();
 
-    public EndWorldEventManager(JavaPlugin plugin, FrameEndConfig config, Messages messages, DragonEggItemFactory eggItemFactory) {
+    public EndWorldEventManager(JavaPlugin plugin, FrameEndConfig config, Messages messages,
+                                DragonEggItemFactory eggItemFactory, pluginsfix.frameend.hologram.HologramManager hologramManager) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.eggItemFactory = eggItemFactory;
+        this.hologramManager = hologramManager;
     }
 
     public void init() {
-        this.anchorPhase = new EndAnchorPhase(plugin, config, messages, this::advanceToDragonPhase);
+        this.anchorPhase = new EndAnchorPhase(plugin, config, messages, hologramManager, this::advanceToDragonPhase);
         this.dragonPhase = new DragonFightPhase(plugin, config, messages, this::advanceToEggPhase);
-        this.eggPhase = new EggCapturePhase(plugin, config, messages, eggItemFactory, this::advanceToClosingPhase);
+        this.eggPhase = new EggCapturePhase(plugin, config, messages, hologramManager, eggItemFactory, this::advanceToClosingPhase);
 
         startScheduleChecker();
     }

@@ -13,8 +13,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import pluginsfix.frameend.animation.AnimationUtil;
 import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.egg.DragonEggItemFactory;
+import pluginsfix.frameend.hologram.HologramManager;
 import pluginsfix.frameend.text.Messages;
 
 import java.util.Comparator;
@@ -27,6 +29,7 @@ public final class EggCapturePhase {
     private final JavaPlugin plugin;
     private final FrameEndConfig config;
     private final Messages messages;
+    private final HologramManager hologramManager;
     private final DragonEggItemFactory itemFactory;
     private final Runnable onPhaseComplete;
     private final Random random = new Random();
@@ -39,10 +42,11 @@ public final class EggCapturePhase {
     private BukkitTask eggBeaconTask;
 
     public EggCapturePhase(JavaPlugin plugin, FrameEndConfig config, Messages messages,
-                           DragonEggItemFactory itemFactory, Runnable onPhaseComplete) {
+                           HologramManager hologramManager, DragonEggItemFactory itemFactory, Runnable onPhaseComplete) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
+        this.hologramManager = hologramManager;
         this.itemFactory = itemFactory;
         this.onPhaseComplete = onPhaseComplete;
     }
@@ -63,9 +67,10 @@ public final class EggCapturePhase {
             eggLocation.getBlock().setType(Material.DRAGON_EGG);
             world.strikeLightningEffect(eggLocation);
             world.playSound(eggLocation, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
+            hologramManager.updateCaptureEggHologram(eggLocation, 0, config.getEggHitsRequired());
         }
 
-        messages.broadcast("phase-egg-started");
+        messages.broadcast("phase-egg-started", Messages.Placeholder.of("max_hits", config.getEggHitsRequired()));
 
         eggBeaconTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (eggLocation != null && eggLocation.getBlock().getType() == Material.DRAGON_EGG) {
@@ -99,15 +104,22 @@ public final class EggCapturePhase {
 
         currentHits++;
         hitCounts.merge(player.getUniqueId(), 1, Integer::sum);
+        int remaining = Math.max(0, config.getEggHitsRequired() - currentHits);
 
-        World world = block.getWorld();
-        world.spawnParticle(Particle.CRIT, block.getLocation().add(0.5, 0.5, 0.5), 6, 0.2, 0.2, 0.2, 0.1);
-        world.playSound(block.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0f, 1.5f);
+        AnimationUtil.playEggHitAnimation(block.getLocation().add(0.5, 0.5, 0.5), remaining, config.getEggHitsRequired());
+        hologramManager.updateCaptureEggHologram(eggLocation, currentHits, config.getEggHitsRequired());
+
+        messages.send(player, "egg-hit-actionbar",
+                Messages.Placeholder.of("remaining", remaining),
+                Messages.Placeholder.of("current_hits", currentHits),
+                Messages.Placeholder.of("max_hits", config.getEggHitsRequired())
+        );
 
         if (currentHits % 50 == 0 || currentHits >= config.getEggHitsRequired() - 10) {
             messages.broadcast("egg-hit",
                     Messages.Placeholder.of("current_hits", currentHits),
                     Messages.Placeholder.of("max_hits", config.getEggHitsRequired()),
+                    Messages.Placeholder.of("remaining", remaining),
                     Messages.Placeholder.of("player", player.getName())
             );
         }
@@ -123,6 +135,8 @@ public final class EggCapturePhase {
             eggBeaconTask.cancel();
             eggBeaconTask = null;
         }
+
+        hologramManager.remove("capture_egg");
 
         if (eggLocation != null) {
             eggLocation.getBlock().setType(Material.AIR);
@@ -149,6 +163,10 @@ public final class EggCapturePhase {
 
             int glowDurationTicks = config.getGlowingDurationSeconds() * 20;
             winner.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, glowDurationTicks, 1, false, false, true));
+
+            if (eggLocation != null) {
+                AnimationUtil.playEggCaptureAnimation(eggLocation.clone().add(0.5, 0.5, 0.5), winner);
+            }
 
             messages.broadcast("egg-captured",
                     Messages.Placeholder.of("player", winner.getName())
@@ -185,12 +203,20 @@ public final class EggCapturePhase {
             carrierBroadcastTask.cancel();
             carrierBroadcastTask = null;
         }
-        if (eggLocation != null && eggLocation.getBlock().getType() == Material.DRAGON_EGG) {
-            eggLocation.getBlock().setType(Material.AIR);
+        hologramManager.remove("capture_egg");
+        if (eggLocation != null && eggLocation.getWorld() != null) {
+            Block b = eggLocation.getBlock();
+            if (b.getType() == Material.DRAGON_EGG) {
+                b.setType(Material.AIR);
+            }
         }
     }
 
-    public boolean isEventEgg(Location loc) {
-        return eggLocation != null && eggLocation.equals(loc);
+    public boolean isEggBlock(Location location) {
+        return eggLocation != null && eggLocation.equals(location);
+    }
+
+    public boolean isEventEgg(Location location) {
+        return isEggBlock(location);
     }
 }

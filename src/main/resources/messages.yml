@@ -38,13 +38,17 @@ phase-anchors-started:
   - "[sound] ENTITY_WITHER_SPAWN"
 
 anchor-broken:
-  - "[message] &#FFFF00◆ &fИгрок &#FFFF00{player} &fразрушил &#FFFF00Якорь возрождения &fи получил награду!"
+  - "[message] &#FFFF00◆ &fИгрок &#FFFF00{player} &fразрушил &#FFFF00Якорь возрождения&f! &#FB8808Осталось сломать: &#FFFF00{remaining} шт."
   - "[sound] ENTITY_ITEM_PICKUP"
+
+anchor-hit:
+  - "[actionbar] &#FFFF00◆ &fЯкорь возрождения: &#FB8808Осталось сломать {remaining} ударов"
+  - "[sound] BLOCK_RESPAWN_ANCHOR_DEPLETE"
 
 secret-rift-broken:
   - "[message] "
   - "[message] &#FB8808▶ &fВНИМАНИЕ! Игрок &#FFFF00{player} &fнашёл и разрушил &#FB8808Секретный Обелиск&f!"
-  - "[message] &#FFFF00◆ &fЕму достались редчайшие реликвии Эндермира!"
+  - "[message] &#FFFF00◆ &fЕму достались редчайшие реликвии! &#FB8808Осталось сломать: &#FFFF00{remaining} шт."
   - "[message] "
   - "[sound] UI_TOAST_CHALLENGE_COMPLETE"
 
@@ -68,12 +72,16 @@ dragon-killed:
 phase-egg-started:
   - "[message] "
   - "[message] &#FB8808▶ &fФаза 3: &#FFFF00Яйцо Древнего Дракона &fупало на острове!"
-  - "[message] &#FFFF00◆ &fПрочность яйца: &#FB8808500 ударов&f. Ломайте яйцо, чтобы забрать его!"
+  - "[message] &#FFFF00◆ &fПрочность яйца: &#FB8808{max_hits} ударов&f. Ломайте яйцо, чтобы забрать его!"
   - "[message] "
   - "[sound] ENTITY_LIGHTNING_BOLT_THUNDER"
 
 egg-hit:
-  - "[message] &#FFFF00◆ &fПрочность Яйца Дракона: &#FB8808{current_hits}&8/&#FFFF00{max_hits} &fударов &8(&#FFFF00{player}&8)"
+  - "[message] &#FFFF00◆ &fУдары по Яйцу Дракона: &#FB8808{current_hits}&8/&#FFFF00{max_hits}&f. &#FB8808Осталось сломать: &#FFFF00{remaining} ударов &8(&#FFFF00{player}&8)"
+
+egg-hit-actionbar:
+  - "[actionbar] &#FB8808▶ &fЯйцо Дракона: &#FB8808Осталось сломать {remaining} ударов!"
+  - "[sound] BLOCK_STONE_BREAK"
 
 egg-captured:
   - "[message] "

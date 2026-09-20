@@ -11,6 +11,7 @@ import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.egg.DragonEggItemFactory;
 import pluginsfix.frameend.egg.PlacedEggManager;
 import pluginsfix.frameend.event.EndWorldEventManager;
+import pluginsfix.frameend.hologram.HologramManager;
 import pluginsfix.frameend.hook.PlaceholderApiHook;
 import pluginsfix.frameend.hook.PlayerPointsHook;
 import pluginsfix.frameend.hook.VaultEconomyHook;
@@ -28,6 +29,7 @@ public final class FrameEnd extends JavaPlugin {
     private FrameEndConfig config;
     private Messages messages;
     private Storage storage;
+    private HologramManager hologramManager;
     private VaultEconomyHook vaultHook;
     private PlayerPointsHook pointsHook;
     private DragonEggItemFactory eggItemFactory;
@@ -44,18 +46,20 @@ public final class FrameEnd extends JavaPlugin {
         this.storage = new SqliteStorage(getDataFolder(), getLogger());
         this.storage.init();
 
+        this.hologramManager = new HologramManager();
+
         this.vaultHook = new VaultEconomyHook(this);
         this.pointsHook = new PlayerPointsHook();
 
         this.eggItemFactory = new DragonEggItemFactory(this);
         this.compassItemFactory = new DragonCompassItemFactory(this, config);
 
-        this.placedEggManager = new PlacedEggManager(this, config, storage, messages, vaultHook, pointsHook, eggItemFactory);
+        this.placedEggManager = new PlacedEggManager(this, config, storage, messages, vaultHook, pointsHook, eggItemFactory, hologramManager);
         this.placedEggManager.start();
 
         this.compassManager = new DragonCompassManager(config, storage, messages, placedEggManager);
 
-        this.eventManager = new EndWorldEventManager(this, config, messages, eggItemFactory);
+        this.eventManager = new EndWorldEventManager(this, config, messages, eggItemFactory, hologramManager);
         this.eventManager.init();
 
         registerCommands();
@@ -102,6 +106,9 @@ public final class FrameEnd extends JavaPlugin {
         }
         if (placedEggManager != null) {
             placedEggManager.stop();
+        }
+        if (hologramManager != null) {
+            hologramManager.clearAll();
         }
         if (storage != null) {
             storage.close();

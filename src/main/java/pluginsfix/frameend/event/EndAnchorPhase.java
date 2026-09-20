@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -12,33 +11,39 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import pluginsfix.frameend.animation.AnimationUtil;
 import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.config.LootEntry;
 import pluginsfix.frameend.domain.AnchorRarity;
+import pluginsfix.frameend.hologram.HologramManager;
 import pluginsfix.frameend.text.Messages;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class EndAnchorPhase {
     private final JavaPlugin plugin;
     private final FrameEndConfig config;
     private final Messages messages;
+    private final HologramManager hologramManager;
     private final Runnable onPhaseComplete;
     private final Random random = new Random();
+    private final AtomicInteger anchorIdCounter = new AtomicInteger();
 
     private final Map<Location, ActiveAnchor> activeAnchors = new ConcurrentHashMap<>();
     private BukkitTask timerTask;
     private BukkitTask particleTask;
     private int remainingSeconds;
 
-    public EndAnchorPhase(JavaPlugin plugin, FrameEndConfig config, Messages messages, Runnable onPhaseComplete) {
+    public EndAnchorPhase(JavaPlugin plugin, FrameEndConfig config, Messages messages,
+                          HologramManager hologramManager, Runnable onPhaseComplete) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
+        this.hologramManager = hologramManager;
         this.onPhaseComplete = onPhaseComplete;
     }
 
@@ -53,7 +58,7 @@ public final class EndAnchorPhase {
         spawnAnchors(endWorld);
 
         remainingSeconds = config.getAnchorsPhaseDuration();
-        messages.broadcast("phase-anchors-started");
+        messages.broadcast("phase-anchors-started", Messages.Placeholder.of("count", activeAnchors.size()));
 
         timerTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             remainingSeconds--;
@@ -79,7 +84,10 @@ public final class EndAnchorPhase {
     }
 
     private void cleanup() {
-        for (Location loc : activeAnchors.keySet()) {
+        for (Map.Entry<Location, ActiveAnchor> entry : activeAnchors.entrySet()) {
+            Location loc = entry.getKey();
+            ActiveAnchor anchor = entry.getValue();
+            hologramManager.remove(anchor.id);
             if (loc.getWorld() != null && loc.getWorld().isChunkLoaded(loc.getBlockX() >> 4, loc.getBlockZ() >> 4)) {
                 Block b = loc.getBlock();
                 if (b.getType() == Material.RESPAWN_ANCHOR || b.getType() == Material.CRYING_OBSIDIAN) {
@@ -96,7 +104,11 @@ public final class EndAnchorPhase {
             Location loc = findSurfaceLocation(world, 15, 75);
             if (loc != null) {
                 loc.getBlock().setType(Material.RESPAWN_ANCHOR);
-                activeAnchors.put(loc.getBlock().getLocation(), new ActiveAnchor(AnchorRarity.COMMON, config.getAnchorHitsRequired()));
+                String id = "anchor_" + anchorIdCounter.incrementAndGet();
+                int totalHits = config.getAnchorHitsRequired();
+                ActiveAnchor anchor = new ActiveAnchor(id, AnchorRarity.COMMON, totalHits, totalHits);
+                activeAnchors.put(loc.getBlock().getLocation(), anchor);
+                hologramManager.updateAnchorHologram(id, loc.getBlock().getLocation(), AnchorRarity.COMMON, totalHits, totalHits);
             }
         }
 
@@ -105,7 +117,11 @@ public final class EndAnchorPhase {
                 Location loc = findSurfaceLocation(world, 25, 80);
                 if (loc != null) {
                     loc.getBlock().setType(Material.CRYING_OBSIDIAN);
-                    activeAnchors.put(loc.getBlock().getLocation(), new ActiveAnchor(AnchorRarity.SECRET_RIFT, config.getSecretRiftHitsRequired()));
+                    String id = "anchor_rift_" + anchorIdCounter.incrementAndGet();
+                    int totalHits = config.getSecretRiftHitsRequired();
+                    ActiveAnchor anchor = new ActiveAnchor(id, AnchorRarity.SECRET_RIFT, totalHits, totalHits);
+                    activeAnchors.put(loc.getBlock().getLocation(), anchor);
+                    hologramManager.updateAnchorHologram(id, loc.getBlock().getLocation(), AnchorRarity.SECRET_RIFT, totalHits, totalHits);
                 }
             }
         }
@@ -150,25 +166,35 @@ public final class EndAnchorPhase {
         if (anchor == null) return false;
 
         anchor.hitsLeft--;
-        World world = block.getWorld();
         Location center = block.getLocation().add(0.5, 0.5, 0.5);
 
-        world.spawnParticle(Particle.CRIT, center, 10, 0.3, 0.3, 0.3, 0.1);
-        world.playSound(center, Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 1.0f, 1.2f);
+        AnimationUtil.playAnchorHitAnimation(center, anchor.rarity, anchor.hitsLeft);
+        hologramManager.updateAnchorHologram(anchor.id, block.getLocation(), anchor.rarity, anchor.hitsLeft, anchor.totalHits);
+
+        messages.send(player, "anchor-hit",
+                Messages.Placeholder.of("remaining", anchor.hitsLeft),
+                Messages.Placeholder.of("total", anchor.totalHits)
+        );
 
         if (anchor.hitsLeft <= 0) {
             activeAnchors.remove(block.getLocation());
+            hologramManager.remove(anchor.id);
             block.setType(Material.AIR);
 
-            world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 1);
-            world.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
-
+            AnimationUtil.playAnchorBreakAnimation(center, anchor.rarity);
             distributeLoot(player, center, anchor.rarity);
 
+            int remainingAnchors = activeAnchors.size();
             if (anchor.rarity == AnchorRarity.SECRET_RIFT) {
-                messages.broadcast("secret-rift-broken", Messages.Placeholder.of("player", player.getName()));
+                messages.broadcast("secret-rift-broken",
+                        Messages.Placeholder.of("player", player.getName()),
+                        Messages.Placeholder.of("remaining", remainingAnchors)
+                );
             } else {
-                messages.broadcast("anchor-broken", Messages.Placeholder.of("player", player.getName()));
+                messages.broadcast("anchor-broken",
+                        Messages.Placeholder.of("player", player.getName()),
+                        Messages.Placeholder.of("remaining", remainingAnchors)
+                );
             }
 
             if (activeAnchors.isEmpty()) {
@@ -212,11 +238,15 @@ public final class EndAnchorPhase {
     }
 
     private static final class ActiveAnchor {
+        private final String id;
         private final AnchorRarity rarity;
+        private final int totalHits;
         private int hitsLeft;
 
-        public ActiveAnchor(AnchorRarity rarity, int hitsLeft) {
+        public ActiveAnchor(String id, AnchorRarity rarity, int totalHits, int hitsLeft) {
+            this.id = id;
             this.rarity = rarity;
+            this.totalHits = totalHits;
             this.hitsLeft = hitsLeft;
         }
     }
