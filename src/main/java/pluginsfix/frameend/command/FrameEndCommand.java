@@ -53,7 +53,7 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "stop" -> {
-                eventManager.stopEvent();
+                eventManager.finishAndCloseEvent();
                 return true;
             }
             case "next" -> {
