@@ -1,0 +1,166 @@
+no-permission:
+  - "[message] &#FB8808▶ &fНедостаточно &#FB8808прав &fна использование данной команды!"
+  - "[sound] BLOCK_ANVIL_LAND"
+
+player-only:
+  - "[message] &#FB8808▶ &fДанная команда доступна только &#FB8808игрокам&f!"
+
+config-reloaded:
+  - "[message] &#FFFF00◆ &fКонфигурация плагина &#FFFF00FrameEnd &fуспешно &#FFFF00перезагружена&f!"
+  - "[sound] ENTITY_EXPERIENCE_ORB_PICKUP"
+
+portal-closed:
+  - "[message] &#FB8808▶ &fЭндермир сейчас &#FB8808закрыт&f!"
+  - "[message] &#FFFF00◆ &fДо следующего открытия осталось: &#FFFF00{time}"
+  - "[sound] BLOCK_CHEST_LOCKED"
+
+island-boundary-prevented:
+  - "[message] &#FB8808▶ &fВы не можете покинуть &#FB8808остров Дракона &fво время ивента!"
+  - "[sound] ENTITY_ENDERMAN_TELEPORT"
+
+event-broadcast-timer:
+  - "[message] "
+  - "[message] &#FFFF00▶ &fИвент &#FFFF00«Эндермир» &fначнётся через &#FB8808{time}&f!"
+  - "[message] &#FFFF00◆ &fПортал в Край на спавне откроется ровно в &#FFFF0018:00 МСК&f."
+  - "[message] "
+  - "[sound] BLOCK_NOTE_BLOCK_PLING"
+
+event-started:
+  - "[message] "
+  - "[message] &#FFFF00▶ &fИвент &#FFFF00«Эндермир» &fуспешно &#FFFF00начался&f!"
+  - "[message] &#FFFF00◆ &fПортал на спавне &#FFFF00открыт&f! Ищите Якоря возрождения на острове!"
+  - "[message] "
+  - "[sound] UI_TOAST_CHALLENGE_COMPLETE"
+
+phase-anchors-started:
+  - "[message] &#FFFF00▶ &fФаза 1: &#FFFF00Якоря возрождения &fпоявились на острове Дракона!"
+  - "[message] &#FFFF00◆ &fРазрушайте их, чтобы получить ценные сокровища и ресурсы!"
+  - "[sound] ENTITY_WITHER_SPAWN"
+
+anchor-broken:
+  - "[message] &#FFFF00◆ &fИгрок &#FFFF00{player} &fразрушил &#FFFF00Якорь возрождения &fи получил награду!"
+  - "[sound] ENTITY_ITEM_PICKUP"
+
+secret-rift-broken:
+  - "[message] "
+  - "[message] &#FB8808▶ &fВНИМАНИЕ! Игрок &#FFFF00{player} &fнашёл и разрушил &#FB8808Секретный Обелиск&f!"
+  - "[message] &#FFFF00◆ &fЕму достались редчайшие реликвии Эндермира!"
+  - "[message] "
+  - "[sound] UI_TOAST_CHALLENGE_COMPLETE"
+
+phase-dragon-started:
+  - "[message] "
+  - "[message] &#FB8808▶ &fФаза 2: На острове пробудился &#FB8808Древний Эндер-Дракон&f!"
+  - "[message] &#FFFF00◆ &fНанесите больше всего урона, чтобы получить &#FFFF00фреймы&f!"
+  - "[message] "
+  - "[sound] ENTITY_ENDER_DRAGON_GROWL"
+
+dragon-killed:
+  - "[message] "
+  - "[message] &#FFFF00▶ &fДревний Эндер-Дракон был успешно &#FFFF00повержен&f!"
+  - "[message] &#FFFF00◆ &fТоп по урону:"
+  - "[message]   &#FFFF00◆ &f1 место: &#FFFF00{top1_player} &8(&#FB8808{top1_damage} &#fурона&8) — &#FFFF00+{top1_frames} фреймов"
+  - "[message]   &#FFFF00◆ &f2 место: &#FFFF00{top2_player} &8(&#FB8808{top2_damage} &#fурона&8) — &#FFFF00+{top2_frames} фреймов"
+  - "[message]   &#FFFF00◆ &f3 место: &#FFFF00{top3_player} &8(&#FB8808{top3_damage} &#fурона&8) — &#FFFF00+{top3_frames} фреймов"
+  - "[message] "
+  - "[sound] UI_TOAST_CHALLENGE_COMPLETE"
+
+phase-egg-started:
+  - "[message] "
+  - "[message] &#FB8808▶ &fФаза 3: &#FFFF00Яйцо Древнего Дракона &fупало на острове!"
+  - "[message] &#FFFF00◆ &fПрочность яйца: &#FB8808500 ударов&f. Ломайте яйцо, чтобы забрать его!"
+  - "[message] "
+  - "[sound] ENTITY_LIGHTNING_BOLT_THUNDER"
+
+egg-hit:
+  - "[message] &#FFFF00◆ &fПрочность Яйца Дракона: &#FB8808{current_hits}&8/&#FFFF00{max_hits} &fударов &8(&#FFFF00{player}&8)"
+
+egg-captured:
+  - "[message] "
+  - "[message] &#FB8808▶ &fИгрок &#FFFF00{player} &fзахватил &#FFFF00Яйцо Древнего Дракона&f!"
+  - "[message] &#FB8808◆ &fОн подсвечен для всех! Его цель — &#FB8808эвакуироваться через портал&f!"
+  - "[message] "
+  - "[sound] ENTITY_ENDER_DRAGON_DEATH"
+
+carrier-announcement:
+  - "[message] &#FB8808▶ &fНоситель Яйца Дракона &#FFFF00{player} &fнаходится на координатах: &#FFFF00X: {x} Y: {y} Z: {z}"
+
+event-closing-timer:
+  - "[message] &#FB8808▶ &fЭндермир закроется через &#FB8808{time}&f! Все игроки будут телепортированы на спавн."
+
+event-closed:
+  - "[message] "
+  - "[message] &#FFFF00▶ &fИвент &#FFFF00«Эндермир» &fзавершён. Мир Края &#FB8808закрыт&f!"
+  - "[message] &#FFFF00◆ &fВсе исследователи возвращены на спавн."
+  - "[message] "
+  - "[sound] ENTITY_ENDERMAN_TELEPORT"
+
+placed-egg-broadcast:
+  - "[message] "
+  - "[message] &#FB8808▶ &fВНИМАНИЕ! Игрок &#FFFF00{player} &fустановил &#FFFF00Яйцо Древнего Дракона&f!"
+  - "[message] &#FFFF00◆ &fПриблизительные координаты: &#FB8808X: {masked_x} &f| &#FB8808Y: {masked_y} &f| &#FB8808Z: {masked_z}"
+  - "[message] &#FFFF00◆ &fИспользуйте &#FFFF00Компас Дракона&f, чтобы узнать точное местоположение!"
+  - "[message] "
+  - "[sound] ENTITY_WITHER_SPAWN"
+
+placed-egg-broken:
+  - "[message] &#FB8808▶ &fУстановленное &#FFFF00Яйцо Дракона &fбыло разрушено игроком &#FFFF00{player}&f!"
+  - "[sound] BLOCK_ANVIL_DESTROY"
+
+placed-egg-destroyed-wear:
+  - "[message] &#FB8808▶ &fУстановленное &#FFFF00Яйцо Дракона &fбыло полностью &#FB8808разрушено из-за износа&f!"
+  - "[sound] ENTITY_ITEM_BREAK"
+
+placed-egg-income-received:
+  - "[message] &#FFFF00◆ &fЯйцо Дракона принесло доход: &#FFFF00+{amount} монет &8(Износ: &#FB8808{durability}&8/&#FFFF00{max_durability}&8)"
+
+compass-target-found:
+  - "[message] "
+  - "[message] &#FFFF00▶ &fКомпас Дракона зафиксировал сигнал!"
+  - "[message] &#FFFF00◆ &fТочные координаты Яйца: &#FFFF00X: {x} &f| &#FFFF00Y: {y} &f| &#FFFF00Z: {z} &8(&#FFFF00{world}&8)"
+  - "[message] &#FFFF00◆ &fСтрелка компаса теперь указывает на эту позицию."
+  - "[message] "
+  - "[sound] ITEM_LODESTONE_COMPASS_LOCK"
+
+compass-no-active-egg:
+  - "[message] &#FB8808▶ &fВ мире сейчас &#FB8808нет установленных Яиц Дракона&f!"
+  - "[sound] BLOCK_NOTE_BLOCK_BASS"
+
+compass-on-cooldown:
+  - "[message] &#FB8808▶ &fКомпас Дракона перезаряжается! Осталось: &#FB8808{time}"
+  - "[sound] BLOCK_ANVIL_LAND"
+
+compass-given:
+  - "[message] &#FFFF00◆ &fИгроку &#FFFF00{player} &fвыдан &#FFFF00Компас Дракона&f!"
+  - "[sound] ENTITY_EXPERIENCE_ORB_PICKUP"
+
+egg-given:
+  - "[message] &#FFFF00◆ &fИгроку &#FFFF00{player} &fвыдано &#FFFF00Яйцо Древнего Дракона&f!"
+  - "[sound] ENTITY_EXPERIENCE_ORB_PICKUP"
+
+egg-repair-success:
+  - "[message] &#FFFF00◆ &fЯйцо Древнего Дракона успешно &#FFFF00восстановлено&f! &#8(Починок: &#FFFF00{repairs}&8)"
+  - "[sound] BLOCK_ANVIL_USE"
+
+egg-repair-not-enough-resources:
+  - "[message] &#FB8808▶ &fУ вас &#FB8808недостаточно средств/ресурсов &fдля починки Яйца Дракона!"
+  - "[sound] BLOCK_ANVIL_LAND"
+
+command-usage:
+  - "[message] "
+  - "[message] &#FFFF00▶ &fКоманды плагина &#FFFF00FrameEnd&f:"
+  - "[message]   &#FFFF00◆ &f/fe start &8— &#fпринудительно начать ивент"
+  - "[message]   &#FFFF00◆ &f/fe stop &8— &#fпринудительно завершить ивент"
+  - "[message]   &#FFFF00◆ &f/fe next &8— &#fпереключить следующую фазу ивента"
+  - "[message]   &#FFFF00◆ &f/fe giveegg <игрок> &8— &#fвыдать Яйцо Дракона"
+  - "[message]   &#FFFF00◆ &f/fe givecompass <игрок> &8— &#fвыдать Компас Дракона"
+  - "[message]   &#FFFF00◆ &f/fe reload &8— &#fперезагрузить конфигурацию"
+  - "[message] "
+
+command-invalid-args:
+  - "[message] &#FB8808▶ &fНеверные аргументы команды! Используйте &#FFFF00/fe &fдля справки."
+  - "[sound] BLOCK_ANVIL_LAND"
+
+player-not-found:
+  - "[message] &#FB8808▶ &fИгрок &#FB8808{player} &fне найден в сети!"
+  - "[sound] BLOCK_ANVIL_LAND"

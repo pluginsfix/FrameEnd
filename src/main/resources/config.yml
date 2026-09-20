@@ -1,0 +1,133 @@
+config-version: 1
+
+schedule:
+  days:
+    - WEDNESDAY
+    - SATURDAY
+  time-msk: "18:00"
+  timezone: "Europe/Moscow"
+  broadcast-intervals-seconds:
+    - 3600
+    - 1800
+    - 900
+    - 600
+    - 300
+    - 180
+    - 120
+    - 60
+    - 30
+    - 15
+    - 10
+    - 5
+    - 4
+    - 3
+    - 2
+    - 1
+
+world-settings:
+  end-world-name: "world_the_end"
+  spawn-world-name: "world"
+  spawn-x: 0.5
+  spawn-y: 64.0
+  spawn-z: 0.5
+  spawn-yaw: 0.0
+  spawn-pitch: 0.0
+  end-island-radius-limit: 220
+  close-delay-seconds: 180
+
+anchors-phase:
+  duration-seconds: 600
+  anchors-count: 10
+  anchor-hits-required: 5
+  secret-rift-count: 2
+  secret-rift-chance: 0.40
+  secret-rift-hits-required: 8
+  common-loot:
+    - material: NETHERITE_INGOT
+      amount-min: 1
+      amount-max: 3
+      chance: 0.70
+      name: "&#FFFF00◆ &fДревний Незеритовый Слиток"
+    - material: ENCHANTED_GOLDEN_APPLE
+      amount-min: 2
+      amount-max: 5
+      chance: 0.50
+    - material: DIAMOND_BLOCK
+      amount-min: 2
+      amount-max: 6
+      chance: 0.85
+    - material: TOTEM_OF_UNDYING
+      amount-min: 1
+      amount-max: 2
+      chance: 0.40
+    - command: "points give {player} 50"
+      chance: 0.30
+  secret-loot:
+    - material: NETHERITE_BLOCK
+      amount-min: 1
+      amount-max: 2
+      chance: 0.80
+      name: "&#FFFF00◆ &fЭфирный Незеритовый Блок"
+    - material: ENCHANTED_GOLDEN_APPLE
+      amount-min: 5
+      amount-max: 10
+      chance: 0.90
+    - material: NETHER_STAR
+      amount-min: 1
+      amount-max: 3
+      chance: 0.60
+      name: "&#FFFF00◆ &fЗвезда Бездны"
+    - command: "points give {player} 250"
+      chance: 0.75
+
+dragon-phase:
+  health: 3000.0
+  bossbar-title: "&#FB8808▶ &fДревний Эндер-Дракон &8[&#FFFF00{health}&8/&#FFFF00{max_health}&8] &fHP"
+  bossbar-color: "RED"
+  bossbar-style: "SEGMENTED_10"
+  damage-rewards:
+    first-place-frames: 500
+    second-place-frames: 300
+    third-place-frames: 150
+    participation-frames: 50
+    min-damage-for-reward: 50.0
+    reward-commands:
+      - "points give {player} {frames}"
+  drop-exp-amount: 25000
+  extra-drop-items:
+    - material: NETHERITE_BLOCK
+      amount: 3
+      name: "&#FFFF00◆ &fСердце Незерита"
+    - material: ENCHANTED_GOLDEN_APPLE
+      amount: 16
+    - material: ELYTRA
+      amount: 1
+      name: "&#FFFF00◆ &fКрылья Дракона"
+
+egg-phase:
+  durability-hits: 500
+  egg-title: "&#FFFF00◆ &fЯйцо Древнего Дракона"
+  glowing-duration-seconds: 180
+  announcement-interval-seconds: 15
+
+placed-egg:
+  income-interval-seconds: 1
+  income-amount: 10.0
+  income-currency: "VAULT"
+  max-durability: 5000
+  durability-loss-per-payout: 1
+  base-repair-cost-money: 100000.0
+  base-repair-cost-exp-levels: 30
+  base-repair-cost-frames: 100
+  repair-cost-multiplier: 1.5
+  mask-character: "*"
+  mask-digits-count: 2
+
+dragon-compass:
+  cooldown-seconds: 172800
+  item-name: "&#FFFF00▶ &fКомпас Дракона"
+  item-lore:
+    - "&#FFFF00◆ &fУказывает точные координаты установленного"
+    - "&#FFFF00◆ &fЯйца Дракона в мире."
+    - ""
+    - "&#FB8808▶ &fПерезарядка: &#FFFF002 дня"

@@ -1,0 +1,21 @@
+name: FrameEnd
+version: '${project.version}'
+main: pluginsfix.frameend.FrameEnd
+api-version: '1.21'
+author: pluginsfix
+softdepend:
+  - Vault
+  - PlayerPoints
+  - PlaceholderAPI
+commands:
+  frameend:
+    description: Main FrameEnd event management command
+    permission: frameend.admin
+    aliases:
+      - fe
+  dragoncompass:
+    description: Find the placed Dragon Egg coordinates
+    permission: frameend.compass.use
+    aliases:
+      - dcompass
+      - eggcompass
