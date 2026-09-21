@@ -60,7 +60,8 @@ public final class SqliteStorage implements Storage {
                     current_durability INTEGER NOT NULL,
                     max_durability INTEGER NOT NULL,
                     repair_count INTEGER NOT NULL,
-                    placed_time INTEGER NOT NULL
+                    placed_time INTEGER NOT NULL,
+                    aura_type TEXT DEFAULT 'DEFAULT'
                 );
                 """;
 
@@ -75,6 +76,10 @@ public final class SqliteStorage implements Storage {
              Statement stmt = conn.createStatement()) {
             stmt.execute(eggsTable);
             stmt.execute(cooldownsTable);
+            try {
+                stmt.execute("ALTER TABLE frameend_placed_eggs ADD COLUMN aura_type TEXT DEFAULT 'DEFAULT'");
+            } catch (SQLException ignored) {
+            }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Failed to initialize SQLite tables", e);
         }
@@ -89,8 +94,8 @@ public final class SqliteStorage implements Storage {
 
     @Override
     public int insertPlacedEgg(UUID ownerUuid, String worldName, int x, int y, int z,
-                               int currentDurability, int maxDurability, int repairCount, long placedTime) {
-        String sql = "INSERT INTO frameend_placed_eggs (owner_uuid, world_name, x, y, z, current_durability, max_durability, repair_count, placed_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                               int currentDurability, int maxDurability, int repairCount, long placedTime, String auraType) {
+        String sql = "INSERT INTO frameend_placed_eggs (owner_uuid, world_name, x, y, z, current_durability, max_durability, repair_count, placed_time, aura_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, ownerUuid.toString());
@@ -102,6 +107,7 @@ public final class SqliteStorage implements Storage {
             ps.setInt(7, maxDurability);
             ps.setInt(8, repairCount);
             ps.setLong(9, placedTime);
+            ps.setString(10, auraType != null ? auraType : "DEFAULT");
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -130,6 +136,19 @@ public final class SqliteStorage implements Storage {
     }
 
     @Override
+    public void updatePlacedEggAura(int id, String auraType) {
+        String sql = "UPDATE frameend_placed_eggs SET aura_type = ? WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, auraType != null ? auraType : "DEFAULT");
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to update placed egg aura id=" + id, e);
+        }
+    }
+
+    @Override
     public void deletePlacedEgg(int id) {
         String sql = "DELETE FROM frameend_placed_eggs WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
@@ -144,7 +163,7 @@ public final class SqliteStorage implements Storage {
     @Override
     public List<PlacedEgg> loadAllPlacedEggs() {
         List<PlacedEgg> list = new ArrayList<>();
-        String sql = "SELECT id, owner_uuid, world_name, x, y, z, current_durability, max_durability, repair_count, placed_time FROM frameend_placed_eggs";
+        String sql = "SELECT id, owner_uuid, world_name, x, y, z, current_durability, max_durability, repair_count, placed_time, aura_type FROM frameend_placed_eggs";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -159,8 +178,9 @@ public final class SqliteStorage implements Storage {
                 int maxDur = rs.getInt("max_durability");
                 int repCount = rs.getInt("repair_count");
                 long placedTime = rs.getLong("placed_time");
+                String aura = rs.getString("aura_type");
 
-                list.add(new PlacedEgg(id, ownerUuid, world, x, y, z, curDur, maxDur, repCount, placedTime));
+                list.add(new PlacedEgg(id, ownerUuid, world, x, y, z, curDur, maxDur, repCount, placedTime, aura));
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Failed to load placed eggs", e);

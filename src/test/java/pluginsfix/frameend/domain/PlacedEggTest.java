@@ -43,4 +43,13 @@ class PlacedEggTest {
         assertThat(expCost).isEqualTo(23);
         assertThat(framesCost).isEqualTo(45);
     }
+
+    @Test
+    void shouldHandleAuraTypeCorrectly() {
+        PlacedEgg egg = new PlacedEgg(1, UUID.randomUUID(), "world", 100, 64, -200, 500, 500, 0, System.currentTimeMillis(), "FLAME");
+        assertThat(egg.getAuraType()).isEqualTo("FLAME");
+
+        egg.setAuraType("SOULS");
+        assertThat(egg.getAuraType()).isEqualTo("SOULS");
+    }
 }

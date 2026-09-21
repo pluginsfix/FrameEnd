@@ -1,6 +1,7 @@
 package pluginsfix.frameend.listener;
 
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -91,6 +92,15 @@ public final class EggInteractionListener implements Listener {
         if (eventManager.getState() == EventState.EGG_PHASE && eventManager.getEggPhase().isEventEgg(block.getLocation())) {
             event.setCancelled(true);
             eventManager.getEggPhase().handleEggHit(event.getPlayer(), block);
+            return;
+        }
+
+        Optional<PlacedEgg> placedEggOpt = placedEggManager.getEggAt(block.getLocation());
+        if (placedEggOpt.isPresent()) {
+            PlacedEgg placedEgg = placedEggOpt.get();
+            if (!event.getPlayer().getUniqueId().equals(placedEgg.getOwnerUuid())) {
+                placedEggManager.triggerRaidAlert(placedEgg, event.getPlayer());
+            }
         }
     }
 
@@ -98,6 +108,14 @@ public final class EggInteractionListener implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         ItemStack item = event.getItemInHand();
         if (eggItemFactory.isCustomDragonEgg(item)) {
+            World world = event.getBlockPlaced().getWorld();
+            if (world.getEnvironment() != World.Environment.NORMAL || !world.getName().equalsIgnoreCase(config.getPlacedEggAllowedWorld())) {
+                event.setCancelled(true);
+                messages.send(event.getPlayer(), "egg-place-world-not-allowed",
+                        Messages.Placeholder.of("world", config.getPlacedEggAllowedWorld())
+                );
+                return;
+            }
             placedEggManager.onEggPlaced(event.getPlayer(), event.getBlockPlaced(), item);
         }
     }
@@ -119,7 +137,12 @@ public final class EggInteractionListener implements Listener {
         }
 
         if (block.getType() == Material.DRAGON_EGG) {
-            if (placedEggManager.getEggAt(block.getLocation()).isPresent()) {
+            Optional<PlacedEgg> placedEggOpt = placedEggManager.getEggAt(block.getLocation());
+            if (placedEggOpt.isPresent()) {
+                PlacedEgg placedEgg = placedEggOpt.get();
+                if (!event.getPlayer().getUniqueId().equals(placedEgg.getOwnerUuid())) {
+                    placedEggManager.triggerRaidAlert(placedEgg, event.getPlayer());
+                }
                 event.setCancelled(true);
                 event.setDropItems(false);
                 placedEggManager.onEggBroken(event.getPlayer(), block);
@@ -205,21 +228,29 @@ public final class EggInteractionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getInventory().getHolder() instanceof EggRepairMenu menu)) return;
-        event.setCancelled(true);
-
-        if (event.getClickedInventory() == null || !event.getClickedInventory().equals(event.getInventory())) {
+        if (event.getInventory().getHolder() instanceof EggRepairMenu repairMenu) {
+            event.setCancelled(true);
+            if (event.getClickedInventory() != null && event.getClickedInventory().equals(event.getInventory())) {
+                if (event.getWhoClicked() instanceof Player player) {
+                    repairMenu.handleClick(event.getSlot(), player);
+                }
+            }
             return;
         }
 
-        if (event.getWhoClicked() instanceof Player player) {
-            menu.handleClick(event.getSlot(), player);
+        if (event.getInventory().getHolder() instanceof pluginsfix.frameend.egg.EggAuraMenu auraMenu) {
+            event.setCancelled(true);
+            if (event.getClickedInventory() != null && event.getClickedInventory().equals(event.getInventory())) {
+                if (event.getWhoClicked() instanceof Player player) {
+                    auraMenu.handleClick(event.getSlot(), player);
+                }
+            }
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getInventory().getHolder() instanceof EggRepairMenu) {
+        if (event.getInventory().getHolder() instanceof EggRepairMenu || event.getInventory().getHolder() instanceof pluginsfix.frameend.egg.EggAuraMenu) {
             event.setCancelled(true);
         }
     }

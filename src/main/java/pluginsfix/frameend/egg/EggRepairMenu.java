@@ -102,6 +102,14 @@ public final class EggRepairMenu implements InventoryHolder {
                 "&#FB8808▶ &fНажмите ЛКМ для подтверждения"
         );
         inventory.setItem(16, dismantleBtn);
+
+        ItemStack auraBtn = createItem(Material.NETHER_STAR,
+                "&#FFFF00◆ &fКосметические Ауры",
+                "&#FFFF00◆ &fВыбрать визуальные частицы и стиль яйца",
+                "",
+                "&#FB8808▶ &fНажмите ЛКМ для выбора ауры"
+        );
+        inventory.setItem(22, auraBtn);
     }
 
     private ItemStack createItem(Material mat, String name, String... loreLines) {
@@ -164,6 +172,9 @@ public final class EggRepairMenu implements InventoryHolder {
             if (placedEggManager != null) {
                 placedEggManager.dismantleEgg(player, placedEgg);
             }
+        } else if (slot == 22) {
+            EggAuraMenu auraMenu = new EggAuraMenu(placedEgg, storage, messages, placedEggManager);
+            player.openInventory(auraMenu.getInventory());
         }
     }
 

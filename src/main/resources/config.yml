@@ -107,6 +107,15 @@ dragon-phase:
     - material: ELYTRA
       amount: 1
       name: "&#FFFF00◆ &fКрылья Дракона"
+  skills:
+    enabled: true
+    interval-seconds: 15
+    meteor-strike-enabled: true
+    meteor-count: 3
+    gravitational-pulse-enabled: true
+    pulse-radius: 25.0
+    summon-cultists-enabled: true
+    cultists-count: 3
 
 egg-phase:
   durability-hits: 500
@@ -130,6 +139,32 @@ placed-egg:
   repair-cost-multiplier: 1.5
   mask-character: "*"
   mask-digits-count: 2
+  allowed-world: "world"
+  aura:
+    enabled: true
+    radius: 15.0
+    owner-effects:
+      - "STRENGTH:1"
+      - "SPEED:1"
+      - "HASTE:2"
+    enemy-effects:
+      - "SLOWNESS:1"
+  sentinels:
+    enabled: true
+    count: 2
+    type: "ENDERMITE"
+    health: 40.0
+    name: "&#FB8808▶ &#FFFF00Страж Яйца Дракона"
+  telegram:
+    enabled: false
+    bot-token: ""
+    chat-id: ""
+  eclipse:
+    enabled: true
+    income-multiplier: 2.0
+    durability-multiplier: 2.0
+    duration-seconds: 1800
+    interval-seconds: 14400
 
 dragon-compass:
   cooldown-seconds: 172800

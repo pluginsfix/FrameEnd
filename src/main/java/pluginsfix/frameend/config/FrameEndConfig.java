@@ -56,6 +56,15 @@ public final class FrameEndConfig {
     private int dropExpAmount = 25000;
     private final List<LootEntry> dragonExtraDrops = new ArrayList<>();
 
+    private boolean dragonSkillsEnabled = true;
+    private int dragonSkillsIntervalSeconds = 15;
+    private boolean dragonMeteorEnabled = true;
+    private int dragonMeteorCount = 3;
+    private boolean dragonGravityEnabled = true;
+    private double dragonGravityRadius = 25.0;
+    private boolean dragonCultistsEnabled = true;
+    private int dragonCultistsCount = 3;
+
     private int eggHitsRequired = 500;
     private String eggTitle = "&#FFFF00◆ &fЯйцо Древнего Дракона";
     private int glowingDurationSeconds = 180;
@@ -76,6 +85,28 @@ public final class FrameEndConfig {
     private double repairCostMultiplier = 1.5;
     private char maskCharacter = '*';
     private int maskDigitsCount = 2;
+    private String placedEggAllowedWorld = "world";
+
+    private boolean eggAuraEnabled = true;
+    private double eggAuraRadius = 15.0;
+    private List<String> eggAuraOwnerEffects = new ArrayList<>();
+    private List<String> eggAuraEnemyEffects = new ArrayList<>();
+
+    private boolean sentinelsEnabled = true;
+    private int sentinelsCount = 2;
+    private String sentinelsType = "ENDERMITE";
+    private double sentinelsHealth = 40.0;
+    private String sentinelsName = "&#FB8808▶ &#FFFF00Страж Яйца Дракона";
+
+    private boolean telegramEnabled = false;
+    private String telegramBotToken = "";
+    private String telegramChatId = "";
+
+    private boolean eclipseEnabled = true;
+    private double eclipseIncomeMultiplier = 2.0;
+    private double eclipseDurabilityMultiplier = 2.0;
+    private int eclipseDurationSeconds = 1800;
+    private int eclipseIntervalSeconds = 14400;
 
     private long compassCooldownSeconds = 172800L;
     private String compassItemName = "&#FFFF00▶ &fКомпас Дракона";
@@ -172,6 +203,15 @@ public final class FrameEndConfig {
         dragonExtraDrops.clear();
         loadLootList(config.getMapList("dragon-phase.extra-drop-items"), dragonExtraDrops);
 
+        dragonSkillsEnabled = config.getBoolean("dragon-phase.skills.enabled", true);
+        dragonSkillsIntervalSeconds = config.getInt("dragon-phase.skills.interval-seconds", 15);
+        dragonMeteorEnabled = config.getBoolean("dragon-phase.skills.meteor-strike-enabled", true);
+        dragonMeteorCount = config.getInt("dragon-phase.skills.meteor-count", 3);
+        dragonGravityEnabled = config.getBoolean("dragon-phase.skills.gravitational-pulse-enabled", true);
+        dragonGravityRadius = config.getDouble("dragon-phase.skills.pulse-radius", 25.0);
+        dragonCultistsEnabled = config.getBoolean("dragon-phase.skills.summon-cultists-enabled", true);
+        dragonCultistsCount = config.getInt("dragon-phase.skills.cultists-count", 3);
+
         eggHitsRequired = config.getInt("egg-phase.durability-hits", 500);
         eggTitle = config.getString("egg-phase.egg-title", "&#FFFF00◆ &fЯйцо Древнего Дракона");
         glowingDurationSeconds = config.getInt("egg-phase.glowing-duration-seconds", 180);
@@ -193,6 +233,34 @@ public final class FrameEndConfig {
         String maskCharStr = config.getString("placed-egg.mask-character", "*");
         maskCharacter = maskCharStr.isEmpty() ? '*' : maskCharStr.charAt(0);
         maskDigitsCount = config.getInt("placed-egg.mask-digits-count", 2);
+        placedEggAllowedWorld = config.getString("placed-egg.allowed-world", "world");
+
+        eggAuraEnabled = config.getBoolean("placed-egg.aura.enabled", true);
+        eggAuraRadius = config.getDouble("placed-egg.aura.radius", 15.0);
+        eggAuraOwnerEffects = config.getStringList("placed-egg.aura.owner-effects");
+        if (eggAuraOwnerEffects.isEmpty()) {
+            eggAuraOwnerEffects = List.of("STRENGTH:1", "SPEED:1", "HASTE:2");
+        }
+        eggAuraEnemyEffects = config.getStringList("placed-egg.aura.enemy-effects");
+        if (eggAuraEnemyEffects.isEmpty()) {
+            eggAuraEnemyEffects = List.of("SLOWNESS:1");
+        }
+
+        sentinelsEnabled = config.getBoolean("placed-egg.sentinels.enabled", true);
+        sentinelsCount = config.getInt("placed-egg.sentinels.count", 2);
+        sentinelsType = config.getString("placed-egg.sentinels.type", "ENDERMITE");
+        sentinelsHealth = config.getDouble("placed-egg.sentinels.health", 40.0);
+        sentinelsName = config.getString("placed-egg.sentinels.name", "&#FB8808▶ &#FFFF00Страж Яйца Дракона");
+
+        telegramEnabled = config.getBoolean("placed-egg.telegram.enabled", false);
+        telegramBotToken = config.getString("placed-egg.telegram.bot-token", "");
+        telegramChatId = config.getString("placed-egg.telegram.chat-id", "");
+
+        eclipseEnabled = config.getBoolean("placed-egg.eclipse.enabled", true);
+        eclipseIncomeMultiplier = config.getDouble("placed-egg.eclipse.income-multiplier", 2.0);
+        eclipseDurabilityMultiplier = config.getDouble("placed-egg.eclipse.durability-multiplier", 2.0);
+        eclipseDurationSeconds = config.getInt("placed-egg.eclipse.duration-seconds", 1800);
+        eclipseIntervalSeconds = config.getInt("placed-egg.eclipse.interval-seconds", 14400);
 
         compassCooldownSeconds = config.getLong("dragon-compass.cooldown-seconds", 172800L);
         compassItemName = config.getString("dragon-compass.item-name", "&#FFFF00▶ &fКомпас Дракона");
@@ -279,6 +347,32 @@ public final class FrameEndConfig {
     public double getRepairCostMultiplier() { return repairCostMultiplier; }
     public char getMaskCharacter() { return maskCharacter; }
     public int getMaskDigitsCount() { return maskDigitsCount; }
+    public String getPlacedEggAllowedWorld() { return placedEggAllowedWorld; }
+    public boolean isDragonSkillsEnabled() { return dragonSkillsEnabled; }
+    public int getDragonSkillsIntervalSeconds() { return dragonSkillsIntervalSeconds; }
+    public boolean isDragonMeteorEnabled() { return dragonMeteorEnabled; }
+    public int getDragonMeteorCount() { return dragonMeteorCount; }
+    public boolean isDragonGravityEnabled() { return dragonGravityEnabled; }
+    public double getDragonGravityRadius() { return dragonGravityRadius; }
+    public boolean isDragonCultistsEnabled() { return dragonCultistsEnabled; }
+    public int getDragonCultistsCount() { return dragonCultistsCount; }
+    public boolean isEggAuraEnabled() { return eggAuraEnabled; }
+    public double getEggAuraRadius() { return eggAuraRadius; }
+    public List<String> getEggAuraOwnerEffects() { return eggAuraOwnerEffects; }
+    public List<String> getEggAuraEnemyEffects() { return eggAuraEnemyEffects; }
+    public boolean isSentinelsEnabled() { return sentinelsEnabled; }
+    public int getSentinelsCount() { return sentinelsCount; }
+    public String getSentinelsType() { return sentinelsType; }
+    public double getSentinelsHealth() { return sentinelsHealth; }
+    public String getSentinelsName() { return sentinelsName; }
+    public boolean isTelegramEnabled() { return telegramEnabled; }
+    public String getTelegramBotToken() { return telegramBotToken; }
+    public String getTelegramChatId() { return telegramChatId; }
+    public boolean isEclipseEnabled() { return eclipseEnabled; }
+    public double getEclipseIncomeMultiplier() { return eclipseIncomeMultiplier; }
+    public double getEclipseDurabilityMultiplier() { return eclipseDurabilityMultiplier; }
+    public int getEclipseDurationSeconds() { return eclipseDurationSeconds; }
+    public int getEclipseIntervalSeconds() { return eclipseIntervalSeconds; }
     public long getCompassCooldownSeconds() { return compassCooldownSeconds; }
     public String getCompassItemName() { return compassItemName; }
     public List<String> getCompassItemLore() { return compassItemLore; }

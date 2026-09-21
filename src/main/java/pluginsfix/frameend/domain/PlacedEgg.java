@@ -13,9 +13,10 @@ public final class PlacedEgg {
     private final int maxDurability;
     private int repairCount;
     private final long placedTime;
+    private String auraType;
 
     public PlacedEgg(int id, UUID ownerUuid, String worldName, int x, int y, int z,
-                     int currentDurability, int maxDurability, int repairCount, long placedTime) {
+                     int currentDurability, int maxDurability, int repairCount, long placedTime, String auraType) {
         this.id = id;
         this.ownerUuid = ownerUuid;
         this.worldName = worldName;
@@ -26,6 +27,12 @@ public final class PlacedEgg {
         this.maxDurability = maxDurability;
         this.repairCount = repairCount;
         this.placedTime = placedTime;
+        this.auraType = (auraType != null && !auraType.isBlank()) ? auraType : "DEFAULT";
+    }
+
+    public PlacedEgg(int id, UUID ownerUuid, String worldName, int x, int y, int z,
+                     int currentDurability, int maxDurability, int repairCount, long placedTime) {
+        this(id, ownerUuid, worldName, x, y, z, currentDurability, maxDurability, repairCount, placedTime, "DEFAULT");
     }
 
     public int getId() {
@@ -66,6 +73,14 @@ public final class PlacedEgg {
 
     public long getPlacedTime() {
         return placedTime;
+    }
+
+    public String getAuraType() {
+        return auraType;
+    }
+
+    public void setAuraType(String auraType) {
+        this.auraType = (auraType != null && !auraType.isBlank()) ? auraType : "DEFAULT";
     }
 
     public boolean reduceDurability(int amount) {

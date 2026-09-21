@@ -2,6 +2,8 @@ package pluginsfix.frameend.event;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,6 +44,8 @@ public final class DragonFightPhase {
     private double currentHealth;
     private final Map<UUID, DamageRecord> damageTracker = new ConcurrentHashMap<>();
     private BukkitTask bossBarUpdateTask;
+    private BukkitTask skillsTask;
+    private final Random random = new Random();
 
     public DragonFightPhase(JavaPlugin plugin, FrameEndConfig config, Messages messages, LootManager lootManager, Runnable onPhaseComplete) {
         this.plugin = plugin;
@@ -119,7 +124,72 @@ public final class DragonFightPhase {
             updateBossBar();
         }, 5L, 5L);
 
+        if (config.isDragonSkillsEnabled()) {
+            long intervalTicks = Math.max(100L, config.getDragonSkillsIntervalSeconds() * 20L);
+            skillsTask = Bukkit.getScheduler().runTaskTimer(plugin, this::executeRandomSkill, intervalTicks, intervalTicks);
+        }
+
         messages.broadcast("phase-dragon-started");
+    }
+
+    private void executeRandomSkill() {
+        if (dragon == null || !dragon.isValid()) return;
+        World world = dragon.getWorld();
+        List<Player> endPlayers = world.getPlayers();
+        if (endPlayers.isEmpty()) return;
+
+        List<Integer> availableSkills = new ArrayList<>();
+        if (config.isDragonMeteorEnabled()) availableSkills.add(1);
+        if (config.isDragonGravityEnabled()) availableSkills.add(2);
+        if (config.isDragonCultistsEnabled()) availableSkills.add(3);
+        if (availableSkills.isEmpty()) return;
+
+        int chosen = availableSkills.get(random.nextInt(availableSkills.size()));
+        switch (chosen) {
+            case 1 -> {
+                messages.broadcast("dragon-skill-meteor");
+                int count = Math.min(endPlayers.size(), config.getDragonMeteorCount());
+                for (int i = 0; i < count; i++) {
+                    Player target = endPlayers.get(random.nextInt(endPlayers.size()));
+                    Location dropLoc = target.getLocation().clone().add(0, 20, 0);
+                    org.bukkit.entity.Fireball fb = (org.bukkit.entity.Fireball) world.spawnEntity(dropLoc, EntityType.FIREBALL);
+                    fb.setDirection(new org.bukkit.util.Vector(0, -1.0, 0));
+                    fb.setYield(2.0f);
+                    world.spawnParticle(Particle.LAVA, dropLoc, 20, 0.5, 0.5, 0.5, 0.1);
+                    world.playSound(dropLoc, Sound.ENTITY_GHAST_SHOOT, 1.2f, 0.8f);
+                }
+            }
+            case 2 -> {
+                messages.broadcast("dragon-skill-gravity");
+                Location center = dragon.getLocation();
+                world.spawnParticle(Particle.SONIC_BOOM, center, 3, 1.0, 1.0, 1.0, 0.1);
+                world.playSound(center, Sound.ENTITY_WARDEN_SONIC_BOOM, 1.5f, 1.0f);
+                double radiusSq = config.getDragonGravityRadius() * config.getDragonGravityRadius();
+                for (Player p : endPlayers) {
+                    if (p.getLocation().distanceSquared(center) <= radiusSq) {
+                        p.setVelocity(new org.bukkit.util.Vector(0, 1.3, 0));
+                    }
+                }
+            }
+            case 3 -> {
+                messages.broadcast("dragon-skill-cultists");
+                int cultistsCount = config.getDragonCultistsCount();
+                for (int i = 0; i < cultistsCount; i++) {
+                    double angle = random.nextDouble() * 2 * Math.PI;
+                    double dist = 10 + random.nextDouble() * 20;
+                    int x = (int) (dist * Math.cos(angle));
+                    int z = (int) (dist * Math.sin(angle));
+                    int y = world.getHighestBlockYAt(x, z) + 1;
+                    Location spawnPos = new Location(world, x, y, z);
+
+                    org.bukkit.entity.Enderman cultist = (org.bukkit.entity.Enderman) world.spawnEntity(spawnPos, EntityType.ENDERMAN);
+                    cultist.customName(Messages.colorize("&#FB8808▶ &#FFFF00Культист Бездны"));
+                    cultist.setCustomNameVisible(true);
+                    world.spawnParticle(Particle.PORTAL, spawnPos, 25, 0.5, 1.0, 0.5, 0.1);
+                }
+            }
+            default -> {}
+        }
     }
 
     public void recordDamage(Player player, double amount) {
@@ -165,6 +235,10 @@ public final class DragonFightPhase {
         if (bossBarUpdateTask != null) {
             bossBarUpdateTask.cancel();
             bossBarUpdateTask = null;
+        }
+        if (skillsTask != null) {
+            skillsTask.cancel();
+            skillsTask = null;
         }
 
         distributeRewardsAndDrops(deathLocation);
@@ -250,6 +324,10 @@ public final class DragonFightPhase {
         if (bossBarUpdateTask != null) {
             bossBarUpdateTask.cancel();
             bossBarUpdateTask = null;
+        }
+        if (skillsTask != null) {
+            skillsTask.cancel();
+            skillsTask = null;
         }
         if (dragon != null && dragon.isValid()) {
             dragon.remove();

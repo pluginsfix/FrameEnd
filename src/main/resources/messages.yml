@@ -187,3 +187,41 @@ command-invalid-args:
 player-not-found:
   - "[message] &#FB8808▶ &fИгрок &#FB8808{player} &fне найден в сети!"
   - "[sound] BLOCK_ANVIL_LAND"
+
+egg-place-world-not-allowed:
+  - "[message] &#FB8808▶ &fЯйцо Древнего Дракона можно устанавливать только в обычном мире &#FFFF00{world}&f!"
+  - "[sound] BLOCK_ANVIL_LAND"
+
+egg-aura-selected:
+  - "[message] &#FFFF00◆ &fВы успешно установили косметическую ауру: &#FFFF00{aura}&f!"
+  - "[sound] ENTITY_EXPERIENCE_ORB_PICKUP"
+
+dragon-skill-meteor:
+  - "[message] &#FB8808▶ &fДревний Дракон обрушивает &#FB8808Метеоритный Дождь &fна арену!"
+  - "[sound] ENTITY_GENERIC_EXPLODE"
+
+dragon-skill-gravity:
+  - "[message] &#FFFF00▶ &fДревний Дракон высвобождает &#FFFF00Гравитационный Импульс&f!"
+  - "[sound] ENTITY_WARDEN_SONIC_BOOM"
+
+dragon-skill-cultists:
+  - "[message] &#FB8808▶ &fДревний Дракон призвал &#FB8808Культистов Бездны &fна помощь!"
+  - "[sound] ENTITY_WITHER_SPAWN"
+
+eclipse-started:
+  - "[message] "
+  - "[message] &#FB8808▶ &fВНИМАНИЕ! Наступило &#FFFF00Драконье Затмение &8(Счастливый час)&f!"
+  - "[message] &#FFFF00◆ &fДоход со всех установленных Яиц Дракона увеличен в &#FFFF002 раза&f!"
+  - "[message] &#FB8808◆ &fИзнос прочности также увеличен. Берегите свои реликвии!"
+  - "[message] "
+  - "[sound] UI_TOAST_CHALLENGE_COMPLETE"
+
+eclipse-ended:
+  - "[message] &#FB8808▶ &fДраконье Затмение завершилось. Доходность вернулась к норме."
+  - "[sound] BLOCK_NOTE_BLOCK_BASS"
+
+placed-egg-attacked:
+  - "[message] "
+  - "[message] &#FB8808▶ &fТРЕВОГА! Ваше &#FFFF00Яйцо Дракона &fна координатах &#FFFF00X: {x} Y: {y} Z: {z} &#FB8808атаковано игроком &#FFFF00{player}&f!"
+  - "[message] "
+  - "[sound] ENTITY_WITHER_SPAWN"
