@@ -28,7 +28,7 @@ public final class PortalAccessListener implements Listener {
 
         World targetWorld = event.getTo().getWorld();
         if (targetWorld.getName().equals(config.getEndWorldName())) {
-            if (!eventManager.isPortalOpen()) {
+            if (!eventManager.isPortalOpen() && !event.getPlayer().hasPermission("frameend.bypass")) {
                 event.setCancelled(true);
                 messages.send(event.getPlayer(), "portal-closed",
                         Messages.Placeholder.of("time", eventManager.getFormattedTimeUntilNextEvent())
@@ -40,7 +40,6 @@ public final class PortalAccessListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
         if (event.getTo() == null || event.getTo().getWorld() == null) return;
-        if (event.getCause() != PlayerTeleportEvent.TeleportCause.END_PORTAL) return;
 
         Player player = event.getPlayer();
         if (event.getTo().getWorld().getName().equals(config.getEndWorldName())) {

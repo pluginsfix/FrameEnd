@@ -1,9 +1,12 @@
 package pluginsfix.frameend.listener;
 
+import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -29,6 +32,12 @@ public final class DragonDamageListener implements Listener {
         if (event.getDamager() instanceof Player p) {
             damager = p;
         } else if (event.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player p) {
+            damager = p;
+        } else if (event.getDamager() instanceof TNTPrimed tnt && tnt.getSource() instanceof Player p) {
+            damager = p;
+        } else if (event.getDamager() instanceof Firework firework && firework.getShooter() instanceof Player p) {
+            damager = p;
+        } else if (event.getDamager() instanceof AreaEffectCloud cloud && cloud.getSource() instanceof Player p) {
             damager = p;
         }
 

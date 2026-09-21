@@ -122,6 +122,13 @@ public final class EggRepairMenu implements InventoryHolder {
     }
 
     public void handleClick(int slot, Player player) {
+        if (slot == 10 || slot == 12 || slot == 14) {
+            if (placedEgg.getCurrentDurability() >= placedEgg.getMaxDurability()) {
+                player.closeInventory();
+                return;
+            }
+        }
+
         if (slot == 10) {
             double cost = placedEgg.calculateMoneyRepairCost(config.getBaseRepairCostMoney(), config.getRepairCostMultiplier());
             if (!vaultHook.has(player, cost)) {

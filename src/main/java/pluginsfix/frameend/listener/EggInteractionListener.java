@@ -9,8 +9,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -99,19 +105,26 @@ public final class EggInteractionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
-        if (block.getType() != Material.DRAGON_EGG) return;
 
-        if (eventManager.getState() == EventState.EGG_PHASE && eventManager.getEggPhase().isEventEgg(block.getLocation())) {
-            event.setCancelled(true);
-            eventManager.getEggPhase().handleEggHit(event.getPlayer(), block);
-            return;
+        if (eventManager.getState() == EventState.EGG_PHASE) {
+            if (eventManager.getEggPhase().isEventEgg(block.getLocation())) {
+                event.setCancelled(true);
+                eventManager.getEggPhase().handleEggHit(event.getPlayer(), block);
+                return;
+            }
+            if (eventManager.getEggPhase().isEventEgg(block.getLocation().clone().add(0, 1, 0))) {
+                event.setCancelled(true);
+                return;
+            }
         }
 
-        if (placedEggManager.getEggAt(block.getLocation()).isPresent()) {
-            event.setCancelled(true);
-            event.setDropItems(false);
-            placedEggManager.onEggBroken(event.getPlayer(), block);
-            block.setType(Material.AIR);
+        if (block.getType() == Material.DRAGON_EGG) {
+            if (placedEggManager.getEggAt(block.getLocation()).isPresent()) {
+                event.setCancelled(true);
+                event.setDropItems(false);
+                placedEggManager.onEggBroken(event.getPlayer(), block);
+                block.setType(Material.AIR);
+            }
         }
     }
 
@@ -120,6 +133,74 @@ public final class EggInteractionListener implements Listener {
         if (event.getBlock().getType() == Material.DRAGON_EGG) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockPhysics(BlockPhysicsEvent event) {
+        if (event.getBlock().getType() == Material.DRAGON_EGG) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        if (event.getBlock().getType() == Material.DRAGON_EGG || event.getTo() == Material.DRAGON_EGG) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPistonExtend(BlockPistonExtendEvent event) {
+        for (Block b : event.getBlocks()) {
+            if (b.getType() == Material.DRAGON_EGG || placedEggManager.getEggAt(b.getLocation()).isPresent() || eventManager.getAnchorPhase().isAnchorBlock(b.getLocation())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPistonRetract(BlockPistonRetractEvent event) {
+        for (Block b : event.getBlocks()) {
+            if (b.getType() == Material.DRAGON_EGG || placedEggManager.getEggAt(b.getLocation()).isPresent() || eventManager.getAnchorPhase().isAnchorBlock(b.getLocation())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent event) {
+        event.blockList().removeIf(b -> {
+            if (b.getType() == Material.DRAGON_EGG) {
+                if (eventManager.getState() == EventState.EGG_PHASE && eventManager.getEggPhase().isEventEgg(b.getLocation())) {
+                    return true;
+                }
+                if (placedEggManager.getEggAt(b.getLocation()).isPresent()) {
+                    placedEggManager.onEggBroken(null, b);
+                    b.setType(Material.AIR);
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent event) {
+        event.blockList().removeIf(b -> {
+            if (b.getType() == Material.DRAGON_EGG) {
+                if (eventManager.getState() == EventState.EGG_PHASE && eventManager.getEggPhase().isEventEgg(b.getLocation())) {
+                    return true;
+                }
+                if (placedEggManager.getEggAt(b.getLocation()).isPresent()) {
+                    placedEggManager.onEggBroken(null, b);
+                    b.setType(Material.AIR);
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

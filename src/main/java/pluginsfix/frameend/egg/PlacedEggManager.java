@@ -228,8 +228,9 @@ public final class PlacedEggManager {
         ItemStack droppedEgg = itemFactory.createEggItem(found.getCurrentDurability(), found.getMaxDurability(), found.getRepairCount());
         block.getWorld().dropItemNaturally(center, droppedEgg);
 
+        String breakerName = player != null ? player.getName() : "Окружение";
         messages.broadcast("placed-egg-broken",
-                Messages.Placeholder.of("player", player.getName())
+                Messages.Placeholder.of("player", breakerName)
         );
         return true;
     }
