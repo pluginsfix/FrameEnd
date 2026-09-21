@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitTask;
 import pluginsfix.frameend.animation.AnimationUtil;
 import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.egg.DragonEggItemFactory;
+import pluginsfix.frameend.egg.EggPickaxeItemFactory;
 import pluginsfix.frameend.hologram.HologramManager;
 import pluginsfix.frameend.text.Messages;
 
@@ -31,6 +32,7 @@ public final class EggCapturePhase {
     private final Messages messages;
     private final HologramManager hologramManager;
     private final DragonEggItemFactory itemFactory;
+    private final EggPickaxeItemFactory pickaxeFactory;
     private final Runnable onPhaseComplete;
     private final Random random = new Random();
 
@@ -42,12 +44,14 @@ public final class EggCapturePhase {
     private BukkitTask eggBeaconTask;
 
     public EggCapturePhase(JavaPlugin plugin, FrameEndConfig config, Messages messages,
-                           HologramManager hologramManager, DragonEggItemFactory itemFactory, Runnable onPhaseComplete) {
+                           HologramManager hologramManager, DragonEggItemFactory itemFactory,
+                           EggPickaxeItemFactory pickaxeFactory, Runnable onPhaseComplete) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.hologramManager = hologramManager;
         this.itemFactory = itemFactory;
+        this.pickaxeFactory = pickaxeFactory;
         this.onPhaseComplete = onPhaseComplete;
     }
 
@@ -106,8 +110,21 @@ public final class EggCapturePhase {
             return false;
         }
 
-        currentHits++;
-        hitCounts.merge(player.getUniqueId(), 1, Integer::sum);
+        int hitsToAdd = 1;
+        ItemStack inHand = player.getInventory().getItemInMainHand();
+        if (pickaxeFactory != null && pickaxeFactory.isEggBreakerPickaxe(inHand)) {
+            if (player.isSneaking()) {
+                hitsToAdd = Math.max(1, config.getEggHitsRequired() - currentHits);
+            } else {
+                hitsToAdd = Math.min(100, Math.max(1, config.getEggHitsRequired() - currentHits));
+            }
+            World world = block.getWorld();
+            world.playSound(block.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.7f, 1.6f);
+            world.spawnParticle(Particle.SONIC_BOOM, block.getLocation().add(0.5, 0.5, 0.5), 1);
+        }
+
+        currentHits += hitsToAdd;
+        hitCounts.merge(player.getUniqueId(), hitsToAdd, Integer::sum);
         int remaining = Math.max(0, config.getEggHitsRequired() - currentHits);
 
         player.sendBlockChange(block.getLocation(), block.getBlockData());

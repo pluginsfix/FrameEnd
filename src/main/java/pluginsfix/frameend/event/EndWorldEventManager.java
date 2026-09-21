@@ -25,6 +25,7 @@ public final class EndWorldEventManager {
     private final FrameEndConfig config;
     private final Messages messages;
     private final DragonEggItemFactory eggItemFactory;
+    private final pluginsfix.frameend.egg.EggPickaxeItemFactory pickaxeFactory;
     private final pluginsfix.frameend.hologram.HologramManager hologramManager;
     private final LootManager lootManager;
     private final PlayerPointsHook pointsHook;
@@ -40,21 +41,23 @@ public final class EndWorldEventManager {
     private final Set<Long> broadcastedIntervals = new HashSet<>();
 
     public EndWorldEventManager(JavaPlugin plugin, FrameEndConfig config, Messages messages,
-                                DragonEggItemFactory eggItemFactory, pluginsfix.frameend.hologram.HologramManager hologramManager,
+                                DragonEggItemFactory eggItemFactory, pluginsfix.frameend.egg.EggPickaxeItemFactory pickaxeFactory,
+                                pluginsfix.frameend.hologram.HologramManager hologramManager,
                                 LootManager lootManager, PlayerPointsHook pointsHook) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.eggItemFactory = eggItemFactory;
+        this.pickaxeFactory = pickaxeFactory;
         this.hologramManager = hologramManager;
         this.lootManager = lootManager;
         this.pointsHook = pointsHook;
     }
 
     public void init() {
-        this.anchorPhase = new EndAnchorPhase(plugin, config, messages, hologramManager, lootManager, pointsHook, this::advanceToDragonPhase);
+        this.anchorPhase = new EndAnchorPhase(plugin, config, messages, hologramManager, lootManager, pointsHook, pickaxeFactory, this::advanceToDragonPhase);
         this.dragonPhase = new DragonFightPhase(plugin, config, messages, lootManager, this::advanceToEggPhase);
-        this.eggPhase = new EggCapturePhase(plugin, config, messages, hologramManager, eggItemFactory, this::advanceToClosingPhase);
+        this.eggPhase = new EggCapturePhase(plugin, config, messages, hologramManager, eggItemFactory, pickaxeFactory, this::advanceToClosingPhase);
 
         startScheduleChecker();
     }

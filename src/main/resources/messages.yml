@@ -150,6 +150,10 @@ egg-given:
   - "[message] &#FFFF00◆ &fИгроку &#FFFF00{player} &fвыдано &#FFFF00Яйцо Древнего Дракона&f!"
   - "[sound] ENTITY_EXPERIENCE_ORB_PICKUP"
 
+pickaxe-given:
+  - "[message] &#FFFF00◆ &fИгроку &#FFFF00{player} &fвыдана &#FFFF00Кирка Крушителя Энда&f!"
+  - "[sound] ENTITY_EXPERIENCE_ORB_PICKUP"
+
 egg-repair-success:
   - "[message] &#FFFF00◆ &fЯйцо Древнего Дракона успешно &#FFFF00восстановлено&f! &#8(Починок: &#FFFF00{repairs}&8)"
   - "[sound] BLOCK_ANVIL_USE"
@@ -172,6 +176,7 @@ command-usage:
   - "[message]   &#FFFF00◆ &f/fe loot &8— &#fоткрыть редактор лута (GUI)"
   - "[message]   &#FFFF00◆ &f/fe giveegg <игрок> &8— &#fвыдать Яйцо Дракона"
   - "[message]   &#FFFF00◆ &f/fe givecompass <игрок> &8— &#fвыдать Компас Дракона"
+  - "[message]   &#FFFF00◆ &f/fe givepickaxe [игрок] &8— &#fвыдать Кирку Крушителя (быстрый тест)"
   - "[message]   &#FFFF00◆ &f/fe reload &8— &#fперезагрузить конфигурацию"
   - "[message] "
 

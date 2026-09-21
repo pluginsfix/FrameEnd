@@ -37,6 +37,7 @@ public final class FrameEnd extends JavaPlugin {
     private PlayerPointsHook pointsHook;
     private DragonEggItemFactory eggItemFactory;
     private DragonCompassItemFactory compassItemFactory;
+    private pluginsfix.frameend.egg.EggPickaxeItemFactory pickaxeItemFactory;
     private PlacedEggManager placedEggManager;
     private DragonCompassManager compassManager;
     private EndWorldEventManager eventManager;
@@ -57,13 +58,14 @@ public final class FrameEnd extends JavaPlugin {
 
         this.eggItemFactory = new DragonEggItemFactory(this);
         this.compassItemFactory = new DragonCompassItemFactory(this, config);
+        this.pickaxeItemFactory = new pluginsfix.frameend.egg.EggPickaxeItemFactory(this);
 
         this.placedEggManager = new PlacedEggManager(this, config, storage, messages, vaultHook, pointsHook, eggItemFactory, hologramManager);
         this.placedEggManager.start();
 
         this.compassManager = new DragonCompassManager(config, storage, messages, placedEggManager);
 
-        this.eventManager = new EndWorldEventManager(this, config, messages, eggItemFactory, hologramManager, lootManager, pointsHook);
+        this.eventManager = new EndWorldEventManager(this, config, messages, eggItemFactory, pickaxeItemFactory, hologramManager, lootManager, pointsHook);
         this.eventManager.init();
 
         registerCommands();
@@ -74,7 +76,7 @@ public final class FrameEnd extends JavaPlugin {
     private void registerCommands() {
         PluginCommand frameEndCmd = getCommand("frameend");
         if (frameEndCmd != null) {
-            FrameEndCommand executor = new FrameEndCommand(config, messages, eventManager, eggItemFactory, compassItemFactory, lootManager);
+            FrameEndCommand executor = new FrameEndCommand(config, messages, eventManager, eggItemFactory, compassItemFactory, pickaxeItemFactory, lootManager);
             frameEndCmd.setExecutor(executor);
             frameEndCmd.setTabCompleter(executor);
         }

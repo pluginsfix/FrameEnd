@@ -15,6 +15,7 @@ import pluginsfix.frameend.animation.AnimationUtil;
 import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.config.LootEntry;
 import pluginsfix.frameend.domain.AnchorRarity;
+import pluginsfix.frameend.egg.EggPickaxeItemFactory;
 import pluginsfix.frameend.hologram.HologramManager;
 import pluginsfix.frameend.hook.PlayerPointsHook;
 import pluginsfix.frameend.loot.LootManager;
@@ -33,6 +34,7 @@ public final class EndAnchorPhase {
     private final HologramManager hologramManager;
     private final LootManager lootManager;
     private final PlayerPointsHook pointsHook;
+    private final pluginsfix.frameend.egg.EggPickaxeItemFactory pickaxeFactory;
     private final Runnable onPhaseComplete;
     private final Random random = new Random();
     private final AtomicInteger anchorIdCounter = new AtomicInteger();
@@ -45,13 +47,15 @@ public final class EndAnchorPhase {
 
     public EndAnchorPhase(JavaPlugin plugin, FrameEndConfig config, Messages messages,
                           HologramManager hologramManager, LootManager lootManager,
-                          PlayerPointsHook pointsHook, Runnable onPhaseComplete) {
+                          PlayerPointsHook pointsHook, pluginsfix.frameend.egg.EggPickaxeItemFactory pickaxeFactory,
+                          Runnable onPhaseComplete) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.hologramManager = hologramManager;
         this.lootManager = lootManager;
         this.pointsHook = pointsHook;
+        this.pickaxeFactory = pickaxeFactory;
         this.onPhaseComplete = onPhaseComplete;
     }
 
@@ -196,7 +200,13 @@ public final class EndAnchorPhase {
         ActiveAnchor anchor = activeAnchors.get(block.getLocation());
         if (anchor == null) return false;
 
-        anchor.hitsLeft--;
+        ItemStack inHand = player.getInventory().getItemInMainHand();
+        if (pickaxeFactory != null && pickaxeFactory.isEggBreakerPickaxe(inHand)) {
+            anchor.hitsLeft = 0;
+            block.getWorld().spawnParticle(Particle.SONIC_BOOM, block.getLocation().add(0.5, 0.5, 0.5), 1);
+        } else {
+            anchor.hitsLeft--;
+        }
         Location center = block.getLocation().add(0.5, 0.5, 0.5);
 
         AnimationUtil.playAnchorHitAnimation(center, anchor.rarity, anchor.hitsLeft);

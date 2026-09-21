@@ -27,16 +27,19 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
     private final EndWorldEventManager eventManager;
     private final DragonEggItemFactory eggItemFactory;
     private final DragonCompassItemFactory compassItemFactory;
+    private final pluginsfix.frameend.egg.EggPickaxeItemFactory pickaxeItemFactory;
     private final LootManager lootManager;
 
     public FrameEndCommand(FrameEndConfig config, Messages messages, EndWorldEventManager eventManager,
                            DragonEggItemFactory eggItemFactory, DragonCompassItemFactory compassItemFactory,
+                           pluginsfix.frameend.egg.EggPickaxeItemFactory pickaxeItemFactory,
                            LootManager lootManager) {
         this.config = config;
         this.messages = messages;
         this.eventManager = eventManager;
         this.eggItemFactory = eggItemFactory;
         this.compassItemFactory = compassItemFactory;
+        this.pickaxeItemFactory = pickaxeItemFactory;
         this.lootManager = lootManager;
     }
 
@@ -117,6 +120,25 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
                 messages.send(sender, "compass-given", Messages.Placeholder.of("player", target.getName()));
                 return true;
             }
+            case "givepickaxe", "pickaxe" -> {
+                Player target;
+                if (args.length >= 2) {
+                    target = Bukkit.getPlayer(args[1]);
+                    if (target == null) {
+                        messages.send(sender, "player-not-found", Messages.Placeholder.of("player", args[1]));
+                        return true;
+                    }
+                } else if (sender instanceof Player player) {
+                    target = player;
+                } else {
+                    messages.send(sender, "command-invalid-args");
+                    return true;
+                }
+                ItemStack pickaxe = pickaxeItemFactory.createPickaxe();
+                target.getInventory().addItem(pickaxe);
+                messages.send(sender, "pickaxe-given", Messages.Placeholder.of("player", target.getName()));
+                return true;
+            }
             case "reload" -> {
                 config.load();
                 messages.load();
@@ -140,7 +162,7 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> subCommands = List.of("start", "stop", "next", "tp", "editloot", "giveegg", "givecompass", "reload");
+            List<String> subCommands = List.of("start", "stop", "next", "tp", "editloot", "giveegg", "givecompass", "givepickaxe", "pickaxe", "reload");
             List<String> result = new ArrayList<>();
             for (String s : subCommands) {
                 if (s.startsWith(args[0].toLowerCase())) {
@@ -150,7 +172,7 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
             return result;
         }
 
-        if (args.length == 2 && (args[0].equalsIgnoreCase("giveegg") || args[0].equalsIgnoreCase("givecompass"))) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("giveegg") || args[0].equalsIgnoreCase("givecompass") || args[0].equalsIgnoreCase("givepickaxe") || args[0].equalsIgnoreCase("pickaxe"))) {
             List<String> players = new ArrayList<>();
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getName().toLowerCase().startsWith(args[1].toLowerCase())) {
