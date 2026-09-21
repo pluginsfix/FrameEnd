@@ -42,21 +42,27 @@ public final class HologramManager implements HologramService {
         delegate.remove(id);
     }
 
+    public void removeAt(Location location, double radius) {
+        if (delegate instanceof DisplayEntityHologramService displayService) {
+            displayService.removeAt(location, radius);
+        }
+    }
+
     @Override
     public void clearAll() {
         delegate.clearAll();
     }
 
-    public void updateAnchorHologram(String id, Location loc, AnchorRarity rarity, int hitsLeft, int totalHits) {
+    public void updateAnchorHologram(String id, Location loc, AnchorRarity rarity, String rarityDisplayName, int hitsLeft, int totalHits) {
         Location holoLoc = loc.clone().add(0.5, 1.4, 0.5);
         List<String> lines = new ArrayList<>();
         if (rarity == AnchorRarity.SECRET_RIFT) {
             lines.add("&#FB8808▶ &#FB8808Секретный Обелиск");
-            lines.add("&#FFFF00◆ &fРедкость: &#FB8808Реликвия");
+            lines.add("&#FFFF00◆ &fРедкость: " + rarityDisplayName);
             lines.add("&#FFFF00◆ &fОсталось сломать: &#FB8808" + hitsLeft + "&8/&#FFFF00" + totalHits);
         } else {
             lines.add("&#FFFF00▶ &#FFFF00Якорь Возрождения");
-            lines.add("&#FFFF00◆ &fРедкость: &#FFFF00" + rarity.name());
+            lines.add("&#FFFF00◆ &fРедкость: " + rarityDisplayName);
             lines.add("&#FFFF00◆ &fОсталось сломать: &#FB8808" + hitsLeft + "&8/&#FFFF00" + totalHits);
         }
         spawnOrUpdate(id, holoLoc, lines);

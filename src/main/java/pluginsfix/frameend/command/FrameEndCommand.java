@@ -1,6 +1,7 @@
 package pluginsfix.frameend.command;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,6 +13,8 @@ import pluginsfix.frameend.compass.DragonCompassItemFactory;
 import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.egg.DragonEggItemFactory;
 import pluginsfix.frameend.event.EndWorldEventManager;
+import pluginsfix.frameend.loot.LootCategoryMenu;
+import pluginsfix.frameend.loot.LootManager;
 import pluginsfix.frameend.text.Messages;
 
 import java.util.ArrayList;
@@ -24,14 +27,17 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
     private final EndWorldEventManager eventManager;
     private final DragonEggItemFactory eggItemFactory;
     private final DragonCompassItemFactory compassItemFactory;
+    private final LootManager lootManager;
 
     public FrameEndCommand(FrameEndConfig config, Messages messages, EndWorldEventManager eventManager,
-                           DragonEggItemFactory eggItemFactory, DragonCompassItemFactory compassItemFactory) {
+                           DragonEggItemFactory eggItemFactory, DragonCompassItemFactory compassItemFactory,
+                           LootManager lootManager) {
         this.config = config;
         this.messages = messages;
         this.eventManager = eventManager;
         this.eggItemFactory = eggItemFactory;
         this.compassItemFactory = compassItemFactory;
+        this.lootManager = lootManager;
     }
 
     @Override
@@ -58,6 +64,27 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
             }
             case "next" -> {
                 eventManager.nextPhase();
+                return true;
+            }
+            case "tp", "teleport" -> {
+                if (!(sender instanceof Player player)) {
+                    messages.send(sender, "player-only");
+                    return true;
+                }
+                Location loc = eventManager.getEventLocation();
+                if (loc != null) {
+                    player.teleport(loc);
+                    messages.send(player, "event-teleported");
+                }
+                return true;
+            }
+            case "loot", "editloot" -> {
+                if (!(sender instanceof Player player)) {
+                    messages.send(sender, "player-only");
+                    return true;
+                }
+                LootCategoryMenu menu = new LootCategoryMenu(lootManager);
+                player.openInventory(menu.getInventory());
                 return true;
             }
             case "giveegg" -> {
@@ -93,6 +120,9 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
             case "reload" -> {
                 config.load();
                 messages.load();
+                if (lootManager != null) {
+                    lootManager.load();
+                }
                 messages.send(sender, "config-reloaded");
                 return true;
             }
@@ -110,7 +140,7 @@ public final class FrameEndCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> subCommands = List.of("start", "stop", "next", "giveegg", "givecompass", "reload");
+            List<String> subCommands = List.of("start", "stop", "next", "tp", "editloot", "giveegg", "givecompass", "reload");
             List<String> result = new ArrayList<>();
             for (String s : subCommands) {
                 if (s.startsWith(args[0].toLowerCase())) {

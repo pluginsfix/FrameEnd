@@ -71,7 +71,7 @@ public final class EggInteractionListener implements Listener {
             event.setCancelled(true);
             if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 Player player = event.getPlayer();
-                EggRepairMenu menu = new EggRepairMenu(placedEggOpt.get(), config, storage, messages, vaultHook, pointsHook);
+                EggRepairMenu menu = new EggRepairMenu(placedEggOpt.get(), config, storage, messages, vaultHook, pointsHook, placedEggManager);
                 player.openInventory(menu.getInventory());
             }
         }

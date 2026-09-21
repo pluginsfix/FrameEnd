@@ -9,7 +9,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TextDisplay;
 import pluginsfix.frameend.text.Messages;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class DisplayEntityHologramService implements HologramService {
     private final Map<String, UUID> spawnedEntities = new ConcurrentHashMap<>();
+    private final Map<String, Location> entityLocations = new ConcurrentHashMap<>();
 
     @Override
     public void spawnOrUpdate(String id, Location location, List<String> lines) {
@@ -31,6 +31,7 @@ public final class DisplayEntityHologramService implements HologramService {
             if (entity instanceof TextDisplay display && display.isValid()) {
                 display.text(textComponent);
                 display.teleport(location.clone().add(0, 0.4, 0));
+                entityLocations.put(id, location);
                 return;
             }
         }
@@ -44,15 +45,32 @@ public final class DisplayEntityHologramService implements HologramService {
         textDisplay.setDefaultBackground(false);
 
         spawnedEntities.put(id, textDisplay.getUniqueId());
+        entityLocations.put(id, location);
     }
 
     @Override
     public void remove(String id) {
         UUID uuid = spawnedEntities.remove(id);
-        if (uuid == null) return;
+        Location loc = entityLocations.remove(id);
 
-        for (World world : org.bukkit.Bukkit.getWorlds()) {
-            Entity entity = world.getEntity(uuid);
+        if (uuid != null) {
+            for (World world : org.bukkit.Bukkit.getWorlds()) {
+                Entity entity = world.getEntity(uuid);
+                if (entity instanceof TextDisplay display) {
+                    display.remove();
+                }
+            }
+        }
+
+        if (loc != null && loc.getWorld() != null) {
+            removeAt(loc, 3.0);
+        }
+    }
+
+    public void removeAt(Location location, double radius) {
+        if (location == null || location.getWorld() == null) return;
+        World world = location.getWorld();
+        for (Entity entity : world.getNearbyEntities(location, radius, radius, radius)) {
             if (entity instanceof TextDisplay display) {
                 display.remove();
             }
@@ -70,6 +88,7 @@ public final class DisplayEntityHologramService implements HologramService {
             }
         }
         spawnedEntities.clear();
+        entityLocations.clear();
     }
 
     private Component buildComponent(List<String> lines) {

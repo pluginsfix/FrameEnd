@@ -19,6 +19,7 @@ import org.bukkit.scheduler.BukkitTask;
 import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.config.LootEntry;
 import pluginsfix.frameend.domain.DamageRecord;
+import pluginsfix.frameend.loot.LootManager;
 import pluginsfix.frameend.text.Messages;
 
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public final class DragonFightPhase {
     private final JavaPlugin plugin;
     private final FrameEndConfig config;
     private final Messages messages;
+    private final LootManager lootManager;
     private final Runnable onPhaseComplete;
 
     private EnderDragon dragon;
@@ -39,10 +41,11 @@ public final class DragonFightPhase {
     private final Map<UUID, DamageRecord> damageTracker = new ConcurrentHashMap<>();
     private BukkitTask bossBarUpdateTask;
 
-    public DragonFightPhase(JavaPlugin plugin, FrameEndConfig config, Messages messages, Runnable onPhaseComplete) {
+    public DragonFightPhase(JavaPlugin plugin, FrameEndConfig config, Messages messages, LootManager lootManager, Runnable onPhaseComplete) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
+        this.lootManager = lootManager;
         this.onPhaseComplete = onPhaseComplete;
     }
 
@@ -79,18 +82,26 @@ public final class DragonFightPhase {
         }
 
         bossBar = Bukkit.createBossBar(Messages.colorizeString(formatBossbarTitle(dragon.getHealth(), config.getDragonHealth())), color, style);
+        bossBar.setProgress(1.0);
         bossBar.setVisible(true);
+
+        for (Player p : world.getPlayers()) {
+            bossBar.addPlayer(p);
+        }
 
         bossBarUpdateTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (dragon == null || !dragon.isValid()) return;
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getWorld().equals(world)) {
-                    bossBar.addPlayer(p);
+                    if (!bossBar.getPlayers().contains(p)) {
+                        bossBar.addPlayer(p);
+                    }
                 } else {
                     bossBar.removePlayer(p);
                 }
             }
-        }, 20L, 20L);
+            updateBossBar();
+        }, 10L, 10L);
 
         messages.broadcast("phase-dragon-started");
     }
@@ -160,17 +171,23 @@ public final class DragonFightPhase {
             ExperienceOrb orb = (ExperienceOrb) world.spawnEntity(loc, EntityType.EXPERIENCE_ORB);
             orb.setExperience(config.getDropExpAmount());
 
-            for (LootEntry entry : config.getDragonExtraDrops()) {
-                if (entry.hasMaterial()) {
-                    ItemStack item = new ItemStack(entry.material(), entry.amountMin());
-                    if (entry.name() != null && !entry.name().isBlank()) {
-                        ItemMeta meta = item.getItemMeta();
-                        if (meta != null) {
-                            meta.displayName(Messages.colorize(entry.name()));
-                            item.setItemMeta(meta);
+            if (lootManager != null && lootManager.hasCustomLoot(LootManager.CATEGORY_DRAGON)) {
+                for (ItemStack customItem : lootManager.getCategoryItems(LootManager.CATEGORY_DRAGON)) {
+                    world.dropItemNaturally(loc, customItem.clone());
+                }
+            } else {
+                for (LootEntry entry : config.getDragonExtraDrops()) {
+                    if (entry.hasMaterial()) {
+                        ItemStack item = new ItemStack(entry.material(), entry.amountMin());
+                        if (entry.name() != null && !entry.name().isBlank()) {
+                            ItemMeta meta = item.getItemMeta();
+                            if (meta != null) {
+                                meta.displayName(Messages.colorize(entry.name()));
+                                item.setItemMeta(meta);
+                            }
                         }
+                        world.dropItemNaturally(loc, item);
                     }
-                    world.dropItemNaturally(loc, item);
                 }
             }
         }
@@ -194,7 +211,10 @@ public final class DragonFightPhase {
             String cmd = cmdTemplate
                     .replace("{player}", record.playerName())
                     .replace("{frames}", String.valueOf(frames));
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+            try {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+            } catch (Exception ignored) {
+            }
         }
     }
 

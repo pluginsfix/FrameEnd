@@ -1,14 +1,17 @@
 package pluginsfix.frameend.config;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import pluginsfix.frameend.domain.AnchorRarity;
 
 import java.io.File;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,11 +39,12 @@ public final class FrameEndConfig {
     private int secretRiftCount = 2;
     private double secretRiftChance = 0.40;
     private int secretRiftHitsRequired = 8;
+    private final Map<String, String> rarityNames = new HashMap<>();
     private final List<LootEntry> commonAnchorLoot = new ArrayList<>();
     private final List<LootEntry> secretRiftLoot = new ArrayList<>();
 
     private double dragonHealth = 3000.0;
-    private String dragonBossbarTitle = "&#FB8808▶ &fДревний Эндер-Дракон &8[&#FFFF00{health}&8/&#FFFF00{max_health}&8] &fHP";
+    private String dragonBossbarTitle = "&#FB8808▶ &#FFFF00Древний Эндер-Дракон &8[&#FB8808{health}&8/&#FFFF00{max_health} ❤&8]";
     private String dragonBossbarColor = "RED";
     private String dragonBossbarStyle = "SEGMENTED_10";
     private int top1Frames = 500;
@@ -58,8 +62,12 @@ public final class FrameEndConfig {
     private int announcementIntervalSeconds = 15;
 
     private int eggIncomeIntervalSeconds = 1;
-    private double eggIncomeAmount = 10.0;
+    private double eggIncomeMinAmount = 10.0;
+    private double eggIncomeMaxAmount = 100.0;
     private String eggIncomeCurrency = "VAULT";
+    private double eggIncomeRadius = 15.0;
+    private boolean eggDistanceScalingEnabled = true;
+    private double eggMaxDistanceMultiplier = 1.5;
     private int eggMaxDurability = 5000;
     private int eggDurabilityLossPerPayout = 1;
     private double baseRepairCostMoney = 100000.0;
@@ -133,6 +141,16 @@ public final class FrameEndConfig {
         secretRiftChance = config.getDouble("anchors-phase.secret-rift-chance", 0.40);
         secretRiftHitsRequired = config.getInt("anchors-phase.secret-rift-hits-required", 8);
 
+        rarityNames.clear();
+        ConfigurationSection raritySec = config.getConfigurationSection("rarity-names");
+        if (raritySec != null) {
+            for (String key : raritySec.getKeys(false)) {
+                rarityNames.put(key.toUpperCase(), raritySec.getString(key));
+            }
+        }
+        if (!rarityNames.containsKey("COMMON")) rarityNames.put("COMMON", "&#FFFF00Обычный");
+        if (!rarityNames.containsKey("SECRET_RIFT")) rarityNames.put("SECRET_RIFT", "&#FB8808Реликвия");
+
         commonAnchorLoot.clear();
         loadLootList(config.getMapList("anchors-phase.common-loot"), commonAnchorLoot);
 
@@ -140,7 +158,7 @@ public final class FrameEndConfig {
         loadLootList(config.getMapList("anchors-phase.secret-loot"), secretRiftLoot);
 
         dragonHealth = config.getDouble("dragon-phase.health", 3000.0);
-        dragonBossbarTitle = config.getString("dragon-phase.bossbar-title", "&#FB8808▶ &fДревний Эндер-Дракон &8[&#FFFF00{health}&8/&#FFFF00{max_health}&8] &fHP");
+        dragonBossbarTitle = config.getString("dragon-phase.bossbar-title", "&#FB8808▶ &#FFFF00Древний Эндер-Дракон &8[&#FB8808{health}&8/&#FFFF00{max_health} ❤&8]");
         dragonBossbarColor = config.getString("dragon-phase.bossbar-color", "RED");
         dragonBossbarStyle = config.getString("dragon-phase.bossbar-style", "SEGMENTED_10");
         top1Frames = config.getInt("dragon-phase.damage-rewards.first-place-frames", 500);
@@ -160,8 +178,12 @@ public final class FrameEndConfig {
         announcementIntervalSeconds = config.getInt("egg-phase.announcement-interval-seconds", 15);
 
         eggIncomeIntervalSeconds = config.getInt("placed-egg.income-interval-seconds", 1);
-        eggIncomeAmount = config.getDouble("placed-egg.income-amount", 10.0);
+        eggIncomeMinAmount = config.getDouble("placed-egg.income-min-amount", config.getDouble("placed-egg.income-amount", 10.0));
+        eggIncomeMaxAmount = config.getDouble("placed-egg.income-max-amount", 100.0);
         eggIncomeCurrency = config.getString("placed-egg.income-currency", "VAULT");
+        eggIncomeRadius = config.getDouble("placed-egg.income-radius", 15.0);
+        eggDistanceScalingEnabled = config.getBoolean("placed-egg.distance-scaling-enabled", true);
+        eggMaxDistanceMultiplier = config.getDouble("placed-egg.max-distance-multiplier", 1.5);
         eggMaxDurability = config.getInt("placed-egg.max-durability", 5000);
         eggDurabilityLossPerPayout = config.getInt("placed-egg.durability-loss-per-payout", 1);
         baseRepairCostMoney = config.getDouble("placed-egg.base-repair-cost-money", 100000.0);
@@ -197,6 +219,12 @@ public final class FrameEndConfig {
 
             target.add(new LootEntry(mat, min, max, chance, name, cmd));
         }
+    }
+
+    public String getRarityDisplayName(AnchorRarity rarity) {
+        String custom = rarityNames.get(rarity.name());
+        if (custom != null) return custom;
+        return (rarity == AnchorRarity.SECRET_RIFT) ? "&#FB8808Реликвия" : "&#FFFF00Обычный";
     }
 
     public List<DayOfWeek> getScheduleDays() { return scheduleDays; }
@@ -237,8 +265,12 @@ public final class FrameEndConfig {
     public int getGlowingDurationSeconds() { return glowingDurationSeconds; }
     public int getAnnouncementIntervalSeconds() { return announcementIntervalSeconds; }
     public int getEggIncomeIntervalSeconds() { return eggIncomeIntervalSeconds; }
-    public double getEggIncomeAmount() { return eggIncomeAmount; }
+    public double getEggIncomeMinAmount() { return eggIncomeMinAmount; }
+    public double getEggIncomeMaxAmount() { return eggIncomeMaxAmount; }
     public String getEggIncomeCurrency() { return eggIncomeCurrency; }
+    public double getEggIncomeRadius() { return eggIncomeRadius; }
+    public boolean isEggDistanceScalingEnabled() { return eggDistanceScalingEnabled; }
+    public double getEggMaxDistanceMultiplier() { return eggMaxDistanceMultiplier; }
     public int getEggMaxDurability() { return eggMaxDurability; }
     public int getEggDurabilityLossPerPayout() { return eggDurabilityLossPerPayout; }
     public double getBaseRepairCostMoney() { return baseRepairCostMoney; }

@@ -16,6 +16,8 @@ import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.config.LootEntry;
 import pluginsfix.frameend.domain.AnchorRarity;
 import pluginsfix.frameend.hologram.HologramManager;
+import pluginsfix.frameend.hook.PlayerPointsHook;
+import pluginsfix.frameend.loot.LootManager;
 import pluginsfix.frameend.text.Messages;
 
 import java.util.List;
@@ -29,6 +31,8 @@ public final class EndAnchorPhase {
     private final FrameEndConfig config;
     private final Messages messages;
     private final HologramManager hologramManager;
+    private final LootManager lootManager;
+    private final PlayerPointsHook pointsHook;
     private final Runnable onPhaseComplete;
     private final Random random = new Random();
     private final AtomicInteger anchorIdCounter = new AtomicInteger();
@@ -37,13 +41,17 @@ public final class EndAnchorPhase {
     private BukkitTask timerTask;
     private BukkitTask particleTask;
     private int remainingSeconds;
+    private double particleAngle = 0;
 
     public EndAnchorPhase(JavaPlugin plugin, FrameEndConfig config, Messages messages,
-                          HologramManager hologramManager, Runnable onPhaseComplete) {
+                          HologramManager hologramManager, LootManager lootManager,
+                          PlayerPointsHook pointsHook, Runnable onPhaseComplete) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.hologramManager = hologramManager;
+        this.lootManager = lootManager;
+        this.pointsHook = pointsHook;
         this.onPhaseComplete = onPhaseComplete;
     }
 
@@ -68,7 +76,7 @@ public final class EndAnchorPhase {
             }
         }, 20L, 20L);
 
-        particleTask = Bukkit.getScheduler().runTaskTimer(plugin, this::playAnchorParticles, 10L, 10L);
+        particleTask = Bukkit.getScheduler().runTaskTimer(plugin, this::playAnchorParticles, 5L, 5L);
     }
 
     public void end() {
@@ -88,6 +96,7 @@ public final class EndAnchorPhase {
             Location loc = entry.getKey();
             ActiveAnchor anchor = entry.getValue();
             hologramManager.remove(anchor.id);
+            hologramManager.removeAt(loc, 3.0);
             if (loc.getWorld() != null && loc.getWorld().isChunkLoaded(loc.getBlockX() >> 4, loc.getBlockZ() >> 4)) {
                 Block b = loc.getBlock();
                 if (b.getType() == Material.RESPAWN_ANCHOR || b.getType() == Material.CRYING_OBSIDIAN) {
@@ -108,7 +117,7 @@ public final class EndAnchorPhase {
                 int totalHits = config.getAnchorHitsRequired();
                 ActiveAnchor anchor = new ActiveAnchor(id, AnchorRarity.COMMON, totalHits, totalHits);
                 activeAnchors.put(loc.getBlock().getLocation(), anchor);
-                hologramManager.updateAnchorHologram(id, loc.getBlock().getLocation(), AnchorRarity.COMMON, totalHits, totalHits);
+                hologramManager.updateAnchorHologram(id, loc.getBlock().getLocation(), AnchorRarity.COMMON, config.getRarityDisplayName(AnchorRarity.COMMON), totalHits, totalHits);
             }
         }
 
@@ -121,7 +130,7 @@ public final class EndAnchorPhase {
                     int totalHits = config.getSecretRiftHitsRequired();
                     ActiveAnchor anchor = new ActiveAnchor(id, AnchorRarity.SECRET_RIFT, totalHits, totalHits);
                     activeAnchors.put(loc.getBlock().getLocation(), anchor);
-                    hologramManager.updateAnchorHologram(id, loc.getBlock().getLocation(), AnchorRarity.SECRET_RIFT, totalHits, totalHits);
+                    hologramManager.updateAnchorHologram(id, loc.getBlock().getLocation(), AnchorRarity.SECRET_RIFT, config.getRarityDisplayName(AnchorRarity.SECRET_RIFT), totalHits, totalHits);
                 }
             }
         }
@@ -146,17 +155,29 @@ public final class EndAnchorPhase {
     }
 
     private void playAnchorParticles() {
+        particleAngle += Math.PI / 8;
+        if (particleAngle >= 2 * Math.PI) particleAngle = 0;
+
         for (Map.Entry<Location, ActiveAnchor> entry : activeAnchors.entrySet()) {
-            Location loc = entry.getKey().clone().add(0.5, 1.2, 0.5);
+            Location loc = entry.getKey().clone().add(0.5, 0.5, 0.5);
             World w = loc.getWorld();
             if (w == null) continue;
 
-            if (entry.getValue().rarity == AnchorRarity.SECRET_RIFT) {
-                w.spawnParticle(Particle.DRAGON_BREATH, loc, 6, 0.3, 0.3, 0.3, 0.02);
-                w.spawnParticle(Particle.END_ROD, loc, 3, 0.2, 0.4, 0.2, 0.01);
+            boolean isRift = entry.getValue().rarity == AnchorRarity.SECRET_RIFT;
+            double radius = 1.0;
+            double xOffset = radius * Math.cos(particleAngle);
+            double zOffset = radius * Math.sin(particleAngle);
+            Location ringLoc1 = loc.clone().add(xOffset, 0.6, zOffset);
+            Location ringLoc2 = loc.clone().add(-xOffset, 0.6, -zOffset);
+
+            if (isRift) {
+                w.spawnParticle(Particle.DRAGON_BREATH, ringLoc1, 2, 0.05, 0.05, 0.05, 0.01);
+                w.spawnParticle(Particle.END_ROD, ringLoc2, 1, 0.05, 0.05, 0.05, 0.01);
+                w.spawnParticle(Particle.PORTAL, loc.clone().add(0, 1.2, 0), 4, 0.2, 0.4, 0.2, 0.02);
             } else {
-                w.spawnParticle(Particle.PORTAL, loc, 8, 0.3, 0.3, 0.3, 0.05);
-                w.spawnParticle(Particle.SOUL_FIRE_FLAME, loc, 2, 0.2, 0.2, 0.2, 0.01);
+                w.spawnParticle(Particle.SOUL_FIRE_FLAME, ringLoc1, 1, 0.05, 0.05, 0.05, 0.01);
+                w.spawnParticle(Particle.PORTAL, ringLoc2, 3, 0.1, 0.1, 0.1, 0.02);
+                w.spawnParticle(Particle.ENCHANT, loc.clone().add(0, 1.2, 0), 4, 0.2, 0.3, 0.2, 0.05);
             }
         }
     }
@@ -169,7 +190,7 @@ public final class EndAnchorPhase {
         Location center = block.getLocation().add(0.5, 0.5, 0.5);
 
         AnimationUtil.playAnchorHitAnimation(center, anchor.rarity, anchor.hitsLeft);
-        hologramManager.updateAnchorHologram(anchor.id, block.getLocation(), anchor.rarity, anchor.hitsLeft, anchor.totalHits);
+        hologramManager.updateAnchorHologram(anchor.id, block.getLocation(), anchor.rarity, config.getRarityDisplayName(anchor.rarity), anchor.hitsLeft, anchor.totalHits);
 
         messages.send(player, "anchor-hit",
                 Messages.Placeholder.of("remaining", anchor.hitsLeft),
@@ -179,6 +200,7 @@ public final class EndAnchorPhase {
         if (anchor.hitsLeft <= 0) {
             activeAnchors.remove(block.getLocation());
             hologramManager.remove(anchor.id);
+            hologramManager.removeAt(block.getLocation(), 3.0);
             block.setType(Material.AIR);
 
             AnimationUtil.playAnchorBreakAnimation(center, anchor.rarity);
@@ -206,30 +228,58 @@ public final class EndAnchorPhase {
     }
 
     private void distributeLoot(Player player, Location location, AnchorRarity rarity) {
-        List<LootEntry> lootList = (rarity == AnchorRarity.SECRET_RIFT) ? config.getSecretRiftLoot() : config.getCommonAnchorLoot();
         World world = location.getWorld();
         if (world == null) return;
 
-        for (LootEntry entry : lootList) {
-            if (random.nextDouble() <= entry.chance()) {
-                if (entry.hasMaterial()) {
-                    int count = entry.amountMin() == entry.amountMax() ? entry.amountMin() :
-                            entry.amountMin() + random.nextInt(entry.amountMax() - entry.amountMin() + 1);
-                    ItemStack stack = new ItemStack(entry.material(), count);
-                    if (entry.name() != null && !entry.name().isBlank()) {
-                        ItemMeta meta = stack.getItemMeta();
-                        if (meta != null) {
-                            meta.displayName(Messages.colorize(entry.name()));
-                            stack.setItemMeta(meta);
+        String customCategory = (rarity == AnchorRarity.SECRET_RIFT) ? LootManager.CATEGORY_SECRET : LootManager.CATEGORY_COMMON;
+        if (lootManager != null && lootManager.hasCustomLoot(customCategory)) {
+            ItemStack customItem = lootManager.getRandomLootItem(customCategory);
+            if (customItem != null) {
+                world.dropItemNaturally(location, customItem);
+            }
+        } else {
+            List<LootEntry> lootList = (rarity == AnchorRarity.SECRET_RIFT) ? config.getSecretRiftLoot() : config.getCommonAnchorLoot();
+            for (LootEntry entry : lootList) {
+                if (random.nextDouble() <= entry.chance()) {
+                    if (entry.hasMaterial()) {
+                        int count = entry.amountMin() == entry.amountMax() ? entry.amountMin() :
+                                entry.amountMin() + random.nextInt(entry.amountMax() - entry.amountMin() + 1);
+                        ItemStack stack = new ItemStack(entry.material(), count);
+                        if (entry.name() != null && !entry.name().isBlank()) {
+                            ItemMeta meta = stack.getItemMeta();
+                            if (meta != null) {
+                                meta.displayName(Messages.colorize(entry.name()));
+                                stack.setItemMeta(meta);
+                            }
                         }
+                        world.dropItemNaturally(location, stack);
                     }
-                    world.dropItemNaturally(location, stack);
-                }
-                if (entry.hasCommand()) {
-                    String cmd = entry.command().replace("{player}", player.getName());
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                    if (entry.hasCommand()) {
+                        executeRewardCommand(player, entry.command());
+                    }
                 }
             }
+        }
+    }
+
+    private void executeRewardCommand(Player player, String commandTemplate) {
+        String cmd = commandTemplate.replace("{player}", player.getName());
+        if (cmd.startsWith("points give ")) {
+            String[] parts = cmd.split(" ");
+            if (parts.length >= 4) {
+                try {
+                    int points = Integer.parseInt(parts[3]);
+                    if (pointsHook != null) {
+                        pointsHook.givePoints(player.getUniqueId(), points);
+                        return;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        try {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+        } catch (Exception ignored) {
         }
     }
 

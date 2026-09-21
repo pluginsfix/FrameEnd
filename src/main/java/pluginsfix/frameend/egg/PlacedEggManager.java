@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class PlacedEggManager {
@@ -35,6 +36,7 @@ public final class PlacedEggManager {
     private final PlayerPointsHook pointsHook;
     private final DragonEggItemFactory itemFactory;
     private final HologramManager hologramManager;
+    private final Random random = new Random();
 
     private final Map<Integer, PlacedEgg> activeEggs = new ConcurrentHashMap<>();
     private BukkitTask payoutTask;
@@ -83,13 +85,14 @@ public final class PlacedEggManager {
         OfflinePlayer owner = Bukkit.getOfflinePlayer(egg.getOwnerUuid());
         String ownerName = owner.getName() != null ? owner.getName() : "Неизвестно";
 
+        double avgIncome = (config.getEggIncomeMinAmount() + config.getEggIncomeMaxAmount()) / 2.0;
         hologramManager.updatePlacedEggHologram(
                 egg.getId(),
                 loc,
                 ownerName,
                 egg.getCurrentDurability(),
                 egg.getMaxDurability(),
-                config.getEggIncomeAmount(),
+                avgIncome,
                 config.getEggIncomeCurrency()
         );
     }
@@ -110,23 +113,48 @@ public final class PlacedEggManager {
             }
 
             OfflinePlayer owner = Bukkit.getOfflinePlayer(egg.getOwnerUuid());
-            double income = config.getEggIncomeAmount();
+            Player player = owner.getPlayer();
 
-            if ("POINTS".equalsIgnoreCase(config.getEggIncomeCurrency())) {
-                pointsHook.givePoints(egg.getOwnerUuid(), (int) Math.round(income));
+            double min = config.getEggIncomeMinAmount();
+            double max = config.getEggIncomeMaxAmount();
+            double baseIncome = min + (max - min) * random.nextDouble();
+            double finalIncome = baseIncome;
+
+            boolean inRange = true;
+            if (player != null && player.isOnline()) {
+                if (!player.getWorld().getName().equals(egg.getWorldName())) {
+                    inRange = false;
+                } else {
+                    Location eggLoc = new Location(world, egg.getX() + 0.5, egg.getY() + 0.5, egg.getZ() + 0.5);
+                    double dist = player.getLocation().distance(eggLoc);
+                    double radius = config.getEggIncomeRadius();
+
+                    if (radius > 0 && dist > radius) {
+                        inRange = false;
+                    } else if (config.isEggDistanceScalingEnabled() && radius > 0) {
+                        double factor = Math.max(0.0, Math.min(1.0, 1.0 - (dist / radius)));
+                        double multiplier = 1.0 + factor * (config.getEggMaxDistanceMultiplier() - 1.0);
+                        finalIncome = baseIncome * multiplier;
+                    }
+                }
             } else {
-                vaultHook.deposit(owner, income);
+                inRange = false;
             }
 
-            if (owner.isOnline()) {
-                Player player = owner.getPlayer();
-                if (player != null) {
-                    messages.send(player, "placed-egg-income-received",
-                            Messages.Placeholder.of("amount", String.format("%.1f", income)),
-                            Messages.Placeholder.of("durability", egg.getCurrentDurability()),
-                            Messages.Placeholder.of("max_durability", egg.getMaxDurability())
-                    );
+            finalIncome = Math.round(finalIncome * 10.0) / 10.0;
+
+            if (inRange && player != null) {
+                if ("POINTS".equalsIgnoreCase(config.getEggIncomeCurrency())) {
+                    pointsHook.givePoints(egg.getOwnerUuid(), (int) Math.round(finalIncome));
+                } else {
+                    vaultHook.deposit(owner, finalIncome);
                 }
+
+                messages.send(player, "placed-egg-income-received",
+                        Messages.Placeholder.of("amount", String.format("%.1f", finalIncome)),
+                        Messages.Placeholder.of("durability", egg.getCurrentDurability()),
+                        Messages.Placeholder.of("max_durability", egg.getMaxDurability())
+                );
             }
 
             boolean broken = egg.reduceDurability(config.getEggDurabilityLossPerPayout());
@@ -204,6 +232,33 @@ public final class PlacedEggManager {
                 Messages.Placeholder.of("player", player.getName())
         );
         return true;
+    }
+
+    public void dismantleEgg(Player player, PlacedEgg egg) {
+        activeEggs.remove(egg.getId());
+        hologramManager.remove("placed_egg_" + egg.getId());
+        storage.deletePlacedEgg(egg.getId());
+
+        World world = Bukkit.getWorld(egg.getWorldName());
+        if (world != null) {
+            Block block = world.getBlockAt(egg.getX(), egg.getY(), egg.getZ());
+            if (block.getType() == Material.DRAGON_EGG) {
+                block.setType(Material.AIR);
+            }
+            Location center = new Location(world, egg.getX() + 0.5, egg.getY() + 0.5, egg.getZ() + 0.5);
+            AnimationUtil.playPlacedEggBreakAnimation(center);
+        }
+
+        ItemStack eggItem = itemFactory.createEggItem(egg.getCurrentDurability(), egg.getMaxDurability(), egg.getRepairCount());
+        Map<Integer, ItemStack> left = player.getInventory().addItem(eggItem);
+        if (!left.isEmpty() && world != null) {
+            Location dropLoc = player.getLocation();
+            for (ItemStack s : left.values()) {
+                world.dropItemNaturally(dropLoc, s);
+            }
+        }
+
+        messages.send(player, "placed-egg-dismantled");
     }
 
     public Optional<PlacedEgg> getEggAt(Location location) {

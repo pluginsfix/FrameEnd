@@ -115,12 +115,16 @@ placed-egg-broken:
   - "[message] &#FB8808▶ &fУстановленное &#FFFF00Яйцо Дракона &fбыло разрушено игроком &#FFFF00{player}&f!"
   - "[sound] BLOCK_ANVIL_DESTROY"
 
+placed-egg-dismantled:
+  - "[message] &#FFFF00◆ &fВы успешно &#FFFF00демонтировали &fи забрали своё &#FFFF00Яйцо Дракона&f!"
+  - "[sound] ENTITY_ITEM_PICKUP"
+
 placed-egg-destroyed-wear:
   - "[message] &#FB8808▶ &fУстановленное &#FFFF00Яйцо Дракона &fбыло полностью &#FB8808разрушено из-за износа&f!"
   - "[sound] ENTITY_ITEM_BREAK"
 
 placed-egg-income-received:
-  - "[message] &#FFFF00◆ &fЯйцо Дракона принесло доход: &#FFFF00+{amount} монет &8(Износ: &#FB8808{durability}&8/&#FFFF00{max_durability}&8)"
+  - "[actionbar] &#FFFF00◆ &fЯйцо Дракона: &#FFFF00+{amount} монет &8(Износ: &#FB8808{durability}&8/&#FFFF00{max_durability}&8)"
 
 compass-target-found:
   - "[message] "
@@ -154,12 +158,18 @@ egg-repair-not-enough-resources:
   - "[message] &#FB8808▶ &fУ вас &#FB8808недостаточно средств/ресурсов &fдля починки Яйца Дракона!"
   - "[sound] BLOCK_ANVIL_LAND"
 
+event-teleported:
+  - "[message] &#FFFF00◆ &fВы успешно &#FFFF00телепортированы &fк активной зоне ивента в Краю!"
+  - "[sound] ENTITY_ENDERMAN_TELEPORT"
+
 command-usage:
   - "[message] "
   - "[message] &#FFFF00▶ &fКоманды плагина &#FFFF00FrameEnd&f:"
   - "[message]   &#FFFF00◆ &f/fe start &8— &#fпринудительно начать ивент"
   - "[message]   &#FFFF00◆ &f/fe stop &8— &#fпринудительно завершить ивент"
   - "[message]   &#FFFF00◆ &f/fe next &8— &#fпереключить следующую фазу ивента"
+  - "[message]   &#FFFF00◆ &f/fe tp &8— &#fтелепортироваться на арену ивента"
+  - "[message]   &#FFFF00◆ &f/fe loot &8— &#fоткрыть редактор лута (GUI)"
   - "[message]   &#FFFF00◆ &f/fe giveegg <игрок> &8— &#fвыдать Яйцо Дракона"
   - "[message]   &#FFFF00◆ &f/fe givecompass <игрок> &8— &#fвыдать Компас Дракона"
   - "[message]   &#FFFF00◆ &f/fe reload &8— &#fперезагрузить конфигурацию"

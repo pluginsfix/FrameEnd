@@ -9,6 +9,8 @@ import org.bukkit.scheduler.BukkitTask;
 import pluginsfix.frameend.config.FrameEndConfig;
 import pluginsfix.frameend.domain.EventState;
 import pluginsfix.frameend.egg.DragonEggItemFactory;
+import pluginsfix.frameend.hook.PlayerPointsHook;
+import pluginsfix.frameend.loot.LootManager;
 import pluginsfix.frameend.text.Messages;
 
 import java.time.DayOfWeek;
@@ -24,6 +26,8 @@ public final class EndWorldEventManager {
     private final Messages messages;
     private final DragonEggItemFactory eggItemFactory;
     private final pluginsfix.frameend.hologram.HologramManager hologramManager;
+    private final LootManager lootManager;
+    private final PlayerPointsHook pointsHook;
 
     private EventState state = EventState.IDLE;
     private EndAnchorPhase anchorPhase;
@@ -36,17 +40,20 @@ public final class EndWorldEventManager {
     private final Set<Long> broadcastedIntervals = new HashSet<>();
 
     public EndWorldEventManager(JavaPlugin plugin, FrameEndConfig config, Messages messages,
-                                DragonEggItemFactory eggItemFactory, pluginsfix.frameend.hologram.HologramManager hologramManager) {
+                                DragonEggItemFactory eggItemFactory, pluginsfix.frameend.hologram.HologramManager hologramManager,
+                                LootManager lootManager, PlayerPointsHook pointsHook) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.eggItemFactory = eggItemFactory;
         this.hologramManager = hologramManager;
+        this.lootManager = lootManager;
+        this.pointsHook = pointsHook;
     }
 
     public void init() {
-        this.anchorPhase = new EndAnchorPhase(plugin, config, messages, hologramManager, this::advanceToDragonPhase);
-        this.dragonPhase = new DragonFightPhase(plugin, config, messages, this::advanceToEggPhase);
+        this.anchorPhase = new EndAnchorPhase(plugin, config, messages, hologramManager, lootManager, pointsHook, this::advanceToDragonPhase);
+        this.dragonPhase = new DragonFightPhase(plugin, config, messages, lootManager, this::advanceToEggPhase);
         this.eggPhase = new EggCapturePhase(plugin, config, messages, hologramManager, eggItemFactory, this::advanceToClosingPhase);
 
         startScheduleChecker();
@@ -178,6 +185,12 @@ public final class EndWorldEventManager {
 
     public boolean isPortalOpen() {
         return state != EventState.IDLE;
+    }
+
+    public Location getEventLocation() {
+        World world = Bukkit.getWorld(config.getEndWorldName());
+        if (world == null) return null;
+        return new Location(world, 0.5, 70.0, 0.5);
     }
 
     public ZonedDateTime calculateNextEventTime(ZonedDateTime from) {

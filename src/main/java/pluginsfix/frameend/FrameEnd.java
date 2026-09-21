@@ -20,7 +20,9 @@ import pluginsfix.frameend.listener.CompassUseListener;
 import pluginsfix.frameend.listener.DragonDamageListener;
 import pluginsfix.frameend.listener.EggInteractionListener;
 import pluginsfix.frameend.listener.IslandBoundaryListener;
+import pluginsfix.frameend.listener.LootEditorListener;
 import pluginsfix.frameend.listener.PortalAccessListener;
+import pluginsfix.frameend.loot.LootManager;
 import pluginsfix.frameend.storage.SqliteStorage;
 import pluginsfix.frameend.storage.Storage;
 import pluginsfix.frameend.text.Messages;
@@ -30,6 +32,7 @@ public final class FrameEnd extends JavaPlugin {
     private Messages messages;
     private Storage storage;
     private HologramManager hologramManager;
+    private LootManager lootManager;
     private VaultEconomyHook vaultHook;
     private PlayerPointsHook pointsHook;
     private DragonEggItemFactory eggItemFactory;
@@ -42,6 +45,7 @@ public final class FrameEnd extends JavaPlugin {
     public void onEnable() {
         this.config = new FrameEndConfig(this);
         this.messages = new Messages(this);
+        this.lootManager = new LootManager(this);
 
         this.storage = new SqliteStorage(getDataFolder(), getLogger());
         this.storage.init();
@@ -59,7 +63,7 @@ public final class FrameEnd extends JavaPlugin {
 
         this.compassManager = new DragonCompassManager(config, storage, messages, placedEggManager);
 
-        this.eventManager = new EndWorldEventManager(this, config, messages, eggItemFactory, hologramManager);
+        this.eventManager = new EndWorldEventManager(this, config, messages, eggItemFactory, hologramManager, lootManager, pointsHook);
         this.eventManager.init();
 
         registerCommands();
@@ -70,7 +74,7 @@ public final class FrameEnd extends JavaPlugin {
     private void registerCommands() {
         PluginCommand frameEndCmd = getCommand("frameend");
         if (frameEndCmd != null) {
-            FrameEndCommand executor = new FrameEndCommand(config, messages, eventManager, eggItemFactory, compassItemFactory);
+            FrameEndCommand executor = new FrameEndCommand(config, messages, eventManager, eggItemFactory, compassItemFactory, lootManager);
             frameEndCmd.setExecutor(executor);
             frameEndCmd.setTabCompleter(executor);
         }
@@ -91,6 +95,7 @@ public final class FrameEnd extends JavaPlugin {
         pm.registerEvents(new DragonDamageListener(eventManager), this);
         pm.registerEvents(new EggInteractionListener(config, eventManager, placedEggManager, eggItemFactory, storage, messages, vaultHook, pointsHook), this);
         pm.registerEvents(new CompassUseListener(compassItemFactory, compassManager), this);
+        pm.registerEvents(new LootEditorListener(), this);
     }
 
     private void registerHooks() {

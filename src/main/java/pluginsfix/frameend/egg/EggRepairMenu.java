@@ -27,16 +27,19 @@ public final class EggRepairMenu implements InventoryHolder {
     private final Messages messages;
     private final VaultEconomyHook vaultHook;
     private final PlayerPointsHook pointsHook;
+    private final PlacedEggManager placedEggManager;
 
     public EggRepairMenu(PlacedEgg placedEgg, FrameEndConfig config, Storage storage,
-                         Messages messages, VaultEconomyHook vaultHook, PlayerPointsHook pointsHook) {
+                          Messages messages, VaultEconomyHook vaultHook, PlayerPointsHook pointsHook,
+                          PlacedEggManager placedEggManager) {
         this.placedEgg = placedEgg;
         this.config = config;
         this.storage = storage;
         this.messages = messages;
         this.vaultHook = vaultHook;
         this.pointsHook = pointsHook;
-        this.inventory = Bukkit.createInventory(this, 27, Messages.colorize("&#FB8808▶ &fПочинка Яйца Дракона"));
+        this.placedEggManager = placedEggManager;
+        this.inventory = Bukkit.createInventory(this, 27, Messages.colorize("&#FB8808▶ &fУправление Яйцом Дракона"));
         setupItems();
     }
 
@@ -71,7 +74,7 @@ public final class EggRepairMenu implements InventoryHolder {
                 "&#FB8808▶ &fСтоимость: &#FFFF00" + String.format("%.1f", moneyCost) + " монет",
                 "&#FFFF00◆ &fНажмите ЛКМ для оплаты"
         );
-        inventory.setItem(11, moneyBtn);
+        inventory.setItem(10, moneyBtn);
 
         ItemStack expBtn = createItem(Material.EXPERIENCE_BOTTLE,
                 "&#FFFF00◆ &fПочинка за опыт",
@@ -80,7 +83,7 @@ public final class EggRepairMenu implements InventoryHolder {
                 "&#FB8808▶ &fСтоимость: &#FFFF00" + expCost + " уровней",
                 "&#FFFF00◆ &fНажмите ЛКМ для оплаты"
         );
-        inventory.setItem(13, expBtn);
+        inventory.setItem(12, expBtn);
 
         ItemStack framesBtn = createItem(Material.NETHER_STAR,
                 "&#FFFF00◆ &fПочинка за фреймы (донат)",
@@ -89,7 +92,16 @@ public final class EggRepairMenu implements InventoryHolder {
                 "&#FB8808▶ &fСтоимость: &#FFFF00" + framesCost + " фреймов",
                 "&#FFFF00◆ &fНажмите ЛКМ для оплаты"
         );
-        inventory.setItem(15, framesBtn);
+        inventory.setItem(14, framesBtn);
+
+        ItemStack dismantleBtn = createItem(Material.BARRIER,
+                "&#FB8808▶ &#FB8808Сломать и забрать яйцо",
+                "&#FFFF00◆ &fДемонтировать яйцо дракона и вернуть",
+                "&#FFFF00◆ &fего в ваш инвентарь.",
+                "",
+                "&#FB8808▶ &fНажмите ЛКМ для подтверждения"
+        );
+        inventory.setItem(16, dismantleBtn);
     }
 
     private ItemStack createItem(Material mat, String name, String... loreLines) {
@@ -110,7 +122,7 @@ public final class EggRepairMenu implements InventoryHolder {
     }
 
     public void handleClick(int slot, Player player) {
-        if (slot == 11) {
+        if (slot == 10) {
             double cost = placedEgg.calculateMoneyRepairCost(config.getBaseRepairCostMoney(), config.getRepairCostMultiplier());
             if (!vaultHook.has(player, cost)) {
                 messages.send(player, "egg-repair-not-enough-resources");
@@ -119,7 +131,7 @@ public final class EggRepairMenu implements InventoryHolder {
             if (vaultHook.withdraw(player, cost)) {
                 performRepair(player);
             }
-        } else if (slot == 13) {
+        } else if (slot == 12) {
             int expCost = placedEgg.calculateExpRepairCost(config.getBaseRepairCostExpLevels(), config.getRepairCostMultiplier());
             if (player.getLevel() < expCost) {
                 messages.send(player, "egg-repair-not-enough-resources");
@@ -127,7 +139,7 @@ public final class EggRepairMenu implements InventoryHolder {
             }
             player.setLevel(player.getLevel() - expCost);
             performRepair(player);
-        } else if (slot == 15) {
+        } else if (slot == 14) {
             int framesCost = placedEgg.calculateFramesRepairCost(config.getBaseRepairCostFrames(), config.getRepairCostMultiplier());
             if (pointsHook.getPoints(player.getUniqueId()) < framesCost) {
                 messages.send(player, "egg-repair-not-enough-resources");
@@ -136,12 +148,24 @@ public final class EggRepairMenu implements InventoryHolder {
             if (pointsHook.takePoints(player.getUniqueId(), framesCost)) {
                 performRepair(player);
             }
+        } else if (slot == 16) {
+            if (!player.getUniqueId().equals(placedEgg.getOwnerUuid()) && !player.hasPermission("frameend.admin")) {
+                messages.send(player, "no-permission");
+                return;
+            }
+            player.closeInventory();
+            if (placedEggManager != null) {
+                placedEggManager.dismantleEgg(player, placedEgg);
+            }
         }
     }
 
     private void performRepair(Player player) {
         placedEgg.repair(placedEgg.getMaxDurability());
         storage.updatePlacedEgg(placedEgg.getId(), placedEgg.getCurrentDurability(), placedEgg.getRepairCount());
+        if (placedEggManager != null) {
+            placedEggManager.updateEggAfterRepair(placedEgg);
+        }
         messages.send(player, "egg-repair-success",
                 Messages.Placeholder.of("repairs", placedEgg.getRepairCount())
         );

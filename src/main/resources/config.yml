@@ -35,6 +35,10 @@ world-settings:
   end-island-radius-limit: 220
   close-delay-seconds: 180
 
+rarity-names:
+  COMMON: "&#FFFF00Обычный"
+  SECRET_RIFT: "&#FB8808Реликвия"
+
 anchors-phase:
   duration-seconds: 600
   anchors-count: 10
@@ -82,7 +86,7 @@ anchors-phase:
 
 dragon-phase:
   health: 3000.0
-  bossbar-title: "&#FB8808▶ &fДревний Эндер-Дракон &8[&#FFFF00{health}&8/&#FFFF00{max_health}&8] &fHP"
+  bossbar-title: "&#FB8808▶ &#FFFF00Древний Эндер-Дракон &8[&#FB8808{health}&8/&#FFFF00{max_health} ❤&8]"
   bossbar-color: "RED"
   bossbar-style: "SEGMENTED_10"
   damage-rewards:
@@ -112,8 +116,12 @@ egg-phase:
 
 placed-egg:
   income-interval-seconds: 1
-  income-amount: 10.0
+  income-min-amount: 10.0
+  income-max-amount: 100.0
   income-currency: "VAULT"
+  income-radius: 15.0
+  distance-scaling-enabled: true
+  max-distance-multiplier: 1.5
   max-durability: 5000
   durability-loss-per-payout: 1
   base-repair-cost-money: 100000.0
