@@ -38,6 +38,7 @@ public final class DragonFightPhase {
 
     private EnderDragon dragon;
     private BossBar bossBar;
+    private double currentHealth;
     private final Map<UUID, DamageRecord> damageTracker = new ConcurrentHashMap<>();
     private BukkitTask bossBarUpdateTask;
 
@@ -51,6 +52,8 @@ public final class DragonFightPhase {
 
     public void start() {
         damageTracker.clear();
+        this.currentHealth = config.getDragonHealth();
+
         World world = Bukkit.getWorld(config.getEndWorldName());
         if (world == null) {
             onPhaseComplete.run();
@@ -61,36 +64,49 @@ public final class DragonFightPhase {
         dragon = (EnderDragon) world.spawnEntity(spawnLoc, EntityType.ENDER_DRAGON);
         dragon.setPhase(EnderDragon.Phase.CIRCLING);
 
-        AttributeInstance maxHealthAttr = dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH);
-        if (maxHealthAttr != null) {
-            maxHealthAttr.setBaseValue(config.getDragonHealth());
+        try {
+            AttributeInstance maxHealthAttr = dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            if (maxHealthAttr != null) {
+                double safeMax = Math.min(config.getDragonHealth(), 2000.0);
+                maxHealthAttr.setBaseValue(safeMax);
+                dragon.setHealth(safeMax);
+            }
+        } catch (Exception ignored) {
         }
-        dragon.setHealth(config.getDragonHealth());
+
+        try {
+            if (dragon.getBossBar() != null) {
+                dragon.getBossBar().setVisible(false);
+            }
+        } catch (Throwable ignored) {
+        }
 
         BarColor color;
         try {
             color = BarColor.valueOf(config.getDragonBossbarColor().toUpperCase());
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             color = BarColor.RED;
         }
 
         BarStyle style;
         try {
             style = BarStyle.valueOf(config.getDragonBossbarStyle().toUpperCase());
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             style = BarStyle.SEGMENTED_10;
         }
 
-        bossBar = Bukkit.createBossBar(Messages.colorizeString(formatBossbarTitle(dragon.getHealth(), config.getDragonHealth())), color, style);
+        bossBar = Bukkit.createBossBar(Messages.colorizeString(formatBossbarTitle(currentHealth, config.getDragonHealth())), color, style);
         bossBar.setProgress(1.0);
         bossBar.setVisible(true);
 
-        for (Player p : world.getPlayers()) {
-            bossBar.addPlayer(p);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p.getWorld().equals(world)) {
+                bossBar.addPlayer(p);
+            }
         }
 
         bossBarUpdateTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (dragon == null || !dragon.isValid()) return;
+            if (dragon == null || !dragon.isValid() || bossBar == null) return;
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getWorld().equals(world)) {
                     if (!bossBar.getPlayers().contains(p)) {
@@ -101,13 +117,15 @@ public final class DragonFightPhase {
                 }
             }
             updateBossBar();
-        }, 10L, 10L);
+        }, 5L, 5L);
 
         messages.broadcast("phase-dragon-started");
     }
 
     public void recordDamage(Player player, double amount) {
         if (dragon == null || !dragon.isValid()) return;
+
+        currentHealth = Math.max(0.0, currentHealth - amount);
 
         damageTracker.compute(player.getUniqueId(), (uuid, existing) -> {
             if (existing == null) {
@@ -117,14 +135,20 @@ public final class DragonFightPhase {
         });
 
         updateBossBar();
+
+        if (currentHealth <= 0.0) {
+            Location deathLoc = dragon.getLocation();
+            dragon.setHealth(0.0);
+            onDragonDeath(deathLoc);
+        }
     }
 
     private void updateBossBar() {
-        if (dragon == null || bossBar == null) return;
-        double current = Math.max(0.0, dragon.getHealth());
+        if (bossBar == null) return;
         double max = config.getDragonHealth();
-        bossBar.setProgress(Math.max(0.0, Math.min(1.0, current / max)));
-        bossBar.setTitle(Messages.colorizeString(formatBossbarTitle(current, max)));
+        double progress = Math.max(0.0, Math.min(1.0, currentHealth / max));
+        bossBar.setProgress(progress);
+        bossBar.setTitle(Messages.colorizeString(formatBossbarTitle(currentHealth, max)));
     }
 
     private String formatBossbarTitle(double current, double max) {
@@ -234,5 +258,11 @@ public final class DragonFightPhase {
 
     public boolean isEventDragon(UUID entityUuid) {
         return dragon != null && dragon.getUniqueId().equals(entityUuid);
+    }
+
+    public void addPlayerIfActive(Player player) {
+        if (bossBar != null && player.getWorld().getName().equals(config.getEndWorldName())) {
+            bossBar.addPlayer(player);
+        }
     }
 }
