@@ -159,25 +159,35 @@ public final class EndAnchorPhase {
         if (particleAngle >= 2 * Math.PI) particleAngle = 0;
 
         for (Map.Entry<Location, ActiveAnchor> entry : activeAnchors.entrySet()) {
-            Location loc = entry.getKey().clone().add(0.5, 0.5, 0.5);
+            Location loc = entry.getKey();
+            ActiveAnchor anchor = entry.getValue();
             World w = loc.getWorld();
             if (w == null) continue;
 
-            boolean isRift = entry.getValue().rarity == AnchorRarity.SECRET_RIFT;
+            if (w.isChunkLoaded(loc.getBlockX() >> 4, loc.getBlockZ() >> 4)) {
+                Block b = loc.getBlock();
+                Material expected = anchor.rarity == AnchorRarity.SECRET_RIFT ? Material.CRYING_OBSIDIAN : Material.RESPAWN_ANCHOR;
+                if (b.getType() != expected) {
+                    b.setType(expected);
+                }
+            }
+
+            Location center = loc.clone().add(0.5, 0.5, 0.5);
+            boolean isRift = anchor.rarity == AnchorRarity.SECRET_RIFT;
             double radius = 1.0;
             double xOffset = radius * Math.cos(particleAngle);
             double zOffset = radius * Math.sin(particleAngle);
-            Location ringLoc1 = loc.clone().add(xOffset, 0.6, zOffset);
-            Location ringLoc2 = loc.clone().add(-xOffset, 0.6, -zOffset);
+            Location ringLoc1 = center.clone().add(xOffset, 0.6, zOffset);
+            Location ringLoc2 = center.clone().add(-xOffset, 0.6, -zOffset);
 
             if (isRift) {
                 w.spawnParticle(Particle.DRAGON_BREATH, ringLoc1, 2, 0.05, 0.05, 0.05, 0.01);
                 w.spawnParticle(Particle.END_ROD, ringLoc2, 1, 0.05, 0.05, 0.05, 0.01);
-                w.spawnParticle(Particle.PORTAL, loc.clone().add(0, 1.2, 0), 4, 0.2, 0.4, 0.2, 0.02);
+                w.spawnParticle(Particle.PORTAL, center.clone().add(0, 1.2, 0), 4, 0.2, 0.4, 0.2, 0.02);
             } else {
                 w.spawnParticle(Particle.SOUL_FIRE_FLAME, ringLoc1, 1, 0.05, 0.05, 0.05, 0.01);
                 w.spawnParticle(Particle.PORTAL, ringLoc2, 3, 0.1, 0.1, 0.1, 0.02);
-                w.spawnParticle(Particle.ENCHANT, loc.clone().add(0, 1.2, 0), 4, 0.2, 0.3, 0.2, 0.05);
+                w.spawnParticle(Particle.ENCHANT, center.clone().add(0, 1.2, 0), 4, 0.2, 0.3, 0.2, 0.05);
             }
         }
     }

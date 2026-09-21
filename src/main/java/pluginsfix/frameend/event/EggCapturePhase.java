@@ -73,9 +73,13 @@ public final class EggCapturePhase {
         messages.broadcast("phase-egg-started", Messages.Placeholder.of("max_hits", config.getEggHitsRequired()));
 
         eggBeaconTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (eggLocation != null && eggLocation.getBlock().getType() == Material.DRAGON_EGG) {
+            if (eggLocation != null && eggLocation.getWorld() != null) {
                 World w = eggLocation.getWorld();
-                if (w != null) {
+                if (w.isChunkLoaded(eggLocation.getBlockX() >> 4, eggLocation.getBlockZ() >> 4)) {
+                    Block b = eggLocation.getBlock();
+                    if (b.getType() != Material.DRAGON_EGG) {
+                        b.setType(Material.DRAGON_EGG);
+                    }
                     w.spawnParticle(Particle.END_ROD, eggLocation.clone().add(0.5, 1.0, 0.5), 15, 0.4, 0.8, 0.4, 0.05);
                     w.spawnParticle(Particle.DRAGON_BREATH, eggLocation.clone().add(0.5, 0.5, 0.5), 8, 0.3, 0.3, 0.3, 0.02);
                 }
@@ -106,6 +110,7 @@ public final class EggCapturePhase {
         hitCounts.merge(player.getUniqueId(), 1, Integer::sum);
         int remaining = Math.max(0, config.getEggHitsRequired() - currentHits);
 
+        player.sendBlockChange(block.getLocation(), block.getBlockData());
         AnimationUtil.playEggHitAnimation(block.getLocation().add(0.5, 0.5, 0.5), remaining, config.getEggHitsRequired());
         hologramManager.updateCaptureEggHologram(eggLocation, currentHits, config.getEggHitsRequired());
 

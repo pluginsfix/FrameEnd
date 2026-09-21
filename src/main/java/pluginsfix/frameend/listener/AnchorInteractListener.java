@@ -7,6 +7,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import pluginsfix.frameend.domain.EventState;
 import pluginsfix.frameend.event.EndWorldEventManager;
@@ -21,7 +22,6 @@ public final class AnchorInteractListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInteract(PlayerInteractEvent event) {
         if (eventManager.getState() != EventState.ANCHORS_PHASE) return;
-        if (event.getAction() != Action.LEFT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
         Block clicked = event.getClickedBlock();
         if (clicked == null) return;
@@ -29,7 +29,21 @@ public final class AnchorInteractListener implements Listener {
         if (eventManager.getAnchorPhase().isAnchorBlock(clicked.getLocation())) {
             event.setCancelled(true);
             Player player = event.getPlayer();
+            player.sendBlockChange(clicked.getLocation(), clicked.getBlockData());
             eventManager.getAnchorPhase().handleInteract(player, clicked);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onDamage(BlockDamageEvent event) {
+        if (eventManager.getState() != EventState.ANCHORS_PHASE) return;
+
+        Block block = event.getBlock();
+        if (eventManager.getAnchorPhase().isAnchorBlock(block.getLocation())) {
+            event.setCancelled(true);
+            Player player = event.getPlayer();
+            player.sendBlockChange(block.getLocation(), block.getBlockData());
+            eventManager.getAnchorPhase().handleInteract(player, block);
         }
     }
 
@@ -40,7 +54,9 @@ public final class AnchorInteractListener implements Listener {
         Block block = event.getBlock();
         if (eventManager.getAnchorPhase().isAnchorBlock(block.getLocation())) {
             event.setCancelled(true);
-            eventManager.getAnchorPhase().handleInteract(event.getPlayer(), block);
+            Player player = event.getPlayer();
+            player.sendBlockChange(block.getLocation(), block.getBlockData());
+            eventManager.getAnchorPhase().handleInteract(player, block);
         }
     }
 }
